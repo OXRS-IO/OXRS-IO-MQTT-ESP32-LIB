@@ -4,6 +4,4 @@ Library to help with setting up an MQTT connection and subscribing to config and
 
 Callbacks are provided for handling config and command messages and there are helpers for publishing events.
 
-Configures the devices LWT (last-will-testament), including publishing a retained `1` to the LWT topic upon successful connection to the broker.
-
 Attempts to connect to the broker will back-off incrementally if unsuccessful.
