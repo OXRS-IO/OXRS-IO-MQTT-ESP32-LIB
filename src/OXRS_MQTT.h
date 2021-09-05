@@ -40,6 +40,11 @@ class OXRS_MQTT
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
+    char * getConfigTopic(char topic[]);
+    char * getCommandTopic(char topic[]);
+    char * getStatusTopic(char topic[]);
+    char * getTelemetryTopic(char topic[]);
+    
     void onConfig(callback);
     void onCommand(callback);
 
@@ -68,7 +73,7 @@ class OXRS_MQTT
     callback _onCommand;
 
     char * _getTopic(char topic[], const char * topicType);
-    boolean _publish(const char * topicType, JsonObject json);
+    boolean _publish(char topic[], JsonObject json);
 };
 
 #endif
