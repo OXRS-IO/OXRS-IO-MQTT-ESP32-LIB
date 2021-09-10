@@ -33,7 +33,7 @@ typedef void (*callback)(JsonObject);
 class OXRS_MQTT
 {
   public:
-    OXRS_MQTT(PubSubClient& client, OXRS_LCD * screen);
+    OXRS_MQTT(PubSubClient& client, OXRS_LCD * screen=NULL);
 
     void setClientId(const char * deviceId);
     void setClientId(const char * deviceType, byte deviceMac[6]);
@@ -78,6 +78,7 @@ class OXRS_MQTT
 
     char * _getTopic(char topic[], const char * topicType);
     boolean _publish(char topic[], JsonObject json);
+    void _showTopic();
 };
 
 #endif

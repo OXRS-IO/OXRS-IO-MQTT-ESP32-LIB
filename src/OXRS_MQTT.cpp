@@ -15,11 +15,13 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client, OXRS_LCD * screen)
 void OXRS_MQTT::setClientId(const char * deviceId)
 { 
   strcpy(_clientId, deviceId);
+  _showTopic();
 }
 
 void OXRS_MQTT::setClientId(const char * deviceType, byte deviceMac[6])
 { 
   sprintf_P(_clientId, PSTR("%s-%02x%02x%02x"), deviceType, deviceMac[3], deviceMac[4], deviceMac[5]);  
+  _showTopic();
 }
 
 void OXRS_MQTT::setAuth(const char * username, const char * password)
@@ -31,11 +33,13 @@ void OXRS_MQTT::setAuth(const char * username, const char * password)
 void OXRS_MQTT::setTopicPrefix(const char * prefix)
 { 
   strcpy(_topicPrefix, prefix);
+  _showTopic();
 }
 
 void OXRS_MQTT::setTopicSuffix(const char * suffix)
 { 
   strcpy(_topicSuffix, suffix);
+  _showTopic();
 }
 
 char * OXRS_MQTT::getConfigTopic(char topic[])
@@ -61,9 +65,6 @@ char * OXRS_MQTT::getTelemetryTopic(char topic[])
 void OXRS_MQTT::onConfig(callback callback)
 { 
   _onConfig = callback; 
-  char topic[64];
-  getStatusTopic(topic);
-  _screen->show_MQTT_topic(topic);
 }
 
 void OXRS_MQTT::onCommand(callback callback)
@@ -118,7 +119,7 @@ void OXRS_MQTT::loop()
 
 void OXRS_MQTT::receive(char * topic, uint8_t * payload, unsigned int length) 
 {
-  _screen->trigger_mqtt_rx_led ();
+  if (_screen) _screen->trigger_mqtt_rx_led ();
 
   Serial.print(F("[recv] "));
   Serial.print(topic);
@@ -183,7 +184,7 @@ boolean OXRS_MQTT::_publish(char topic[], JsonObject json)
   Serial.print(F(" "));
   Serial.println(buffer);
 
-  _screen->trigger_mqtt_tx_led ();
+  if (_screen) _screen->trigger_mqtt_tx_led ();
   
   _client->publish(topic, buffer);
   return true;
@@ -236,4 +237,12 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   }
   
   return topic;
+}
+
+void OXRS_MQTT::_showTopic()
+{ 
+  char topic[64];
+
+  _getTopic(topic, "+");
+  if (_screen) _screen->show_MQTT_topic(topic);
 }
