@@ -6,10 +6,16 @@
 #include "Arduino.h"
 #include "OXRS_MQTT.h"
 
-OXRS_MQTT::OXRS_MQTT(PubSubClient& client, OXRS_LCD * screen) 
+OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
-  _screen = screen;
+  _screen = NULL;
+}
+
+OXRS_MQTT::OXRS_MQTT(PubSubClient& client, OXRS_LCD& screen) 
+{
+  this->_client = &client;
+  _screen = &screen;
 }
 
 void OXRS_MQTT::setClientId(const char * deviceId)
