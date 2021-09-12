@@ -9,16 +9,25 @@
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
+  _screen = NULL;
+}
+
+OXRS_MQTT::OXRS_MQTT(PubSubClient& client, OXRS_LCD& screen) 
+{
+  this->_client = &client;
+  _screen = &screen;
 }
 
 void OXRS_MQTT::setClientId(const char * deviceId)
 { 
   strcpy(_clientId, deviceId);
+  _showTopic();
 }
 
 void OXRS_MQTT::setClientId(const char * deviceType, byte deviceMac[6])
 { 
   sprintf_P(_clientId, PSTR("%s-%02x%02x%02x"), deviceType, deviceMac[3], deviceMac[4], deviceMac[5]);  
+  _showTopic();
 }
 
 void OXRS_MQTT::setAuth(const char * username, const char * password)
@@ -30,11 +39,13 @@ void OXRS_MQTT::setAuth(const char * username, const char * password)
 void OXRS_MQTT::setTopicPrefix(const char * prefix)
 { 
   strcpy(_topicPrefix, prefix);
+  _showTopic();
 }
 
 void OXRS_MQTT::setTopicSuffix(const char * suffix)
 { 
   strcpy(_topicSuffix, suffix);
+  _showTopic();
 }
 
 char * OXRS_MQTT::getConfigTopic(char topic[])
@@ -114,6 +125,8 @@ void OXRS_MQTT::loop()
 
 void OXRS_MQTT::receive(char * topic, uint8_t * payload, unsigned int length) 
 {
+  if (_screen) _screen->trigger_mqtt_rx_led ();
+
   Serial.print(F("[recv] "));
   Serial.print(topic);
   Serial.print(F(" "));
@@ -176,6 +189,8 @@ boolean OXRS_MQTT::_publish(char topic[], JsonObject json)
   Serial.print(topic);
   Serial.print(F(" "));
   Serial.println(buffer);
+
+  if (_screen) _screen->trigger_mqtt_tx_led ();
   
   _client->publish(topic, buffer);
   return true;
@@ -228,4 +243,12 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   }
   
   return topic;
+}
+
+void OXRS_MQTT::_showTopic()
+{ 
+  char topic[64];
+
+  _getTopic(topic, "+");
+  if (_screen) _screen->show_MQTT_topic(topic);
 }
