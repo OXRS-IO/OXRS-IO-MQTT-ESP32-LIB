@@ -9,8 +9,6 @@
 #include "Arduino.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-#include <OXRS_LCD.h>
-
 
 static const char * MQTT_CONFIG_TOPIC     = "conf";
 static const char * MQTT_COMMAND_TOPIC    = "cmnd";
@@ -34,7 +32,6 @@ class OXRS_MQTT
 {
   public:
     OXRS_MQTT(PubSubClient& client);
-    OXRS_MQTT(PubSubClient& client, OXRS_LCD& screen);
 
     void setClientId(const char * deviceId);
     void setClientId(const char * deviceType, byte deviceMac[6]);
@@ -70,8 +67,6 @@ class OXRS_MQTT
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
     
-    OXRS_LCD * _screen;
-
     boolean _connect();
 
     callback _onConfig;
@@ -79,7 +74,6 @@ class OXRS_MQTT
 
     char * _getTopic(char topic[], const char * topicType);
     boolean _publish(char topic[], JsonObject json);
-    void _showTopic();
 };
 
 #endif
