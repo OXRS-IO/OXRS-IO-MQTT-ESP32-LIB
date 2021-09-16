@@ -224,7 +224,7 @@ void OXRS_MQTT::_callback(const char * topicType, JsonObject json)
   }
   else
   {
-    Serial.println(F("[erro] invalid topic, ignoring message"));
+    Serial.println(F("[warn] invalid topic, ignoring message"));
   }  
 }
 
