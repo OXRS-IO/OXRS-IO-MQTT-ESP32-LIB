@@ -37,6 +37,11 @@ void OXRS_MQTT::setTopicSuffix(const char * suffix)
   strcpy(_topicSuffix, suffix);
 }
 
+char * OXRS_MQTT::getWildcardTopic(char topic[])
+{
+  return _getTopic(topic, "+");
+}
+
 char * OXRS_MQTT::getConfigTopic(char topic[])
 {
   return _getTopic(topic, MQTT_CONFIG_TOPIC);

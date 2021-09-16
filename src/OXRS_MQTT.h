@@ -40,6 +40,7 @@ class OXRS_MQTT
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
+    char * getWildcardTopic(char topic[]);
     char * getConfigTopic(char topic[]);
     char * getCommandTopic(char topic[]);
     char * getStatusTopic(char topic[]);
