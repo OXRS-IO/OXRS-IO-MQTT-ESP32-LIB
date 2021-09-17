@@ -228,13 +228,10 @@ void OXRS_MQTT::_callback(const char * topicType, JsonObject json)
   }  
 }
 
-boolean OXRS_MQTT::_publish(const char * topicType, JsonObject json)
+boolean OXRS_MQTT::_publish(char * topic, JsonObject json)
 {
   if (!_client->connected()) { return false; }
   
-  char topic[64];
-  _getTopic(topic, topicType);
-
   char buffer[256];
   serializeJson(json, buffer);
   
