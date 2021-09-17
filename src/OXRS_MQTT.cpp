@@ -128,7 +128,7 @@ void OXRS_MQTT::receive(char * topic, uint8_t * payload, unsigned int length)
   }
   else
   {
-    for (int i; i < length; i++)
+    for (int i = 0; i < length; i++)
     {
       Serial.print((char)payload[i]);
     }
