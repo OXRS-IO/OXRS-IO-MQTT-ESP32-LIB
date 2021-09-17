@@ -135,26 +135,32 @@ void OXRS_MQTT::receive(char * topic, uint8_t * payload, unsigned int length)
     Serial.println();
   }
 
-  // Tokenise the topic (skipping any prefix) to get the root topic
-  char * token;
-  token = strtok(&topic[strlen(_topicPrefix)], "/");
+  // Tokenise the topic (skipping any prefix) to get the root topic type
+  char * topicType;
+  topicType = strtok(&topic[strlen(_topicPrefix)], "/");
 
   // Deserialise the payload
-  StaticJsonDocument<256> json;
-  deserializeJson(json, payload);
-  
-  // Forward to the appropriate callback
-  if (strncmp(token, "conf", 4) == 0)
+  DynamicJsonDocument json(2048);
+  DeserializationError error = deserializeJson(json, payload);
+  if (error) 
   {
-    if (_onConfig) { _onConfig(json.as<JsonObject>()); }
+    Serial.print(F("[erro] failed to deserialise JSON payload: "));
+    Serial.println(error.f_str());
+    return;
   }
-  else if (strncmp(token, "cmnd", 4) == 0)
+  
+  // Is the payload a JSON array or just a single object?
+  if (json.is<JsonArray>())
   {
-    if (_onCommand) { _onCommand(json.as<JsonObject>()); }
+    JsonArray array = json.as<JsonArray>();
+    for (JsonVariant v : array)
+    {
+      _callback(topicType, v.as<JsonObject>());
+    }
   }
   else
   {
-    Serial.println(F("[erro] invalid topic, ignoring message"));
+    _callback(topicType, json.as<JsonObject>());
   }
 }
 
@@ -168,22 +174,6 @@ boolean OXRS_MQTT::publishTelemetry(JsonObject json)
 {
   char topic[64];
   return _publish(getTelemetryTopic(topic), json);
-}
-
-boolean OXRS_MQTT::_publish(char topic[], JsonObject json)
-{
-  if (!_client->connected()) { return false; }
-  
-  char buffer[256];
-  serializeJson(json, buffer);
-  
-  Serial.print(F("[send] "));
-  Serial.print(topic);
-  Serial.print(F(" "));
-  Serial.println(buffer);
-
-  _client->publish(topic, buffer);
-  return true;
 }
 
 boolean OXRS_MQTT::_connect()
@@ -205,6 +195,53 @@ boolean OXRS_MQTT::_connect()
   }
 
   return success;
+}
+
+void OXRS_MQTT::_callback(const char * topicType, JsonObject json)
+{
+  // Forward to the appropriate callback
+  if (strncmp(topicType, "conf", 4) == 0)
+  {
+    if (_onConfig) 
+    {
+      _onConfig(json);
+    }
+    else
+    {
+      Serial.println(F("[warn] no config handler, ignoring message"));
+    }
+  }
+  else if (strncmp(topicType, "cmnd", 4) == 0)
+  {
+    if (_onCommand)
+    {
+      _onCommand(json);
+    }
+    else
+    {
+      Serial.println(F("[warn] no command handler, ignoring message"));
+    }
+  }
+  else
+  {
+    Serial.println(F("[warn] invalid topic, ignoring message"));
+  }  
+}
+
+boolean OXRS_MQTT::_publish(char * topic, JsonObject json)
+{
+  if (!_client->connected()) { return false; }
+  
+  char buffer[256];
+  serializeJson(json, buffer);
+  
+  Serial.print(F("[send] "));
+  Serial.print(topic);
+  Serial.print(F(" "));
+  Serial.println(buffer);
+  
+  _client->publish(topic, buffer);
+  return true;
 }
 
 char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)

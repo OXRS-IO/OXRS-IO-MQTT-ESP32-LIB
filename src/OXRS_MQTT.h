@@ -67,14 +67,16 @@ class OXRS_MQTT
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
-    
+
     boolean _connect();
 
     callback _onConfig;
     callback _onCommand;
+    
+    void _callback(const char * topicType, JsonObject json);
+    boolean _publish(char * topic, JsonObject json);
 
     char * _getTopic(char topic[], const char * topicType);
-    boolean _publish(char topic[], JsonObject json);
 };
 
 #endif
