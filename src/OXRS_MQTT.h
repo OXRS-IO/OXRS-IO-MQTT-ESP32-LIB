@@ -74,7 +74,7 @@ class OXRS_MQTT
     callback _onCommand;
     
     void _callback(const char * topicType, JsonObject json);
-    boolean _publish(const char * topicType, JsonObject json);
+    boolean _publish(char * topic, JsonObject json);
 
     char * _getTopic(char topic[], const char * topicType);
 };
