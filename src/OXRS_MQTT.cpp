@@ -22,19 +22,41 @@ void OXRS_MQTT::setClientId(const char * deviceType, byte deviceMac[6])
 }
 
 void OXRS_MQTT::setAuth(const char * username, const char * password)
-{ 
-  strcpy(_username, username);
-  strcpy(_password, password);
+{
+  if (username == NULL)
+  {
+    _username[0] = '\0';
+    _password[0] = '\0';
+  }
+  else
+  {
+    strcpy(_username, username);
+    strcpy(_password, password);
+  }
 }
 
 void OXRS_MQTT::setTopicPrefix(const char * prefix)
 { 
-  strcpy(_topicPrefix, prefix);
+  if (prefix == NULL)
+  {
+    _topicPrefix[0] = '\0';
+  }
+  else
+  {
+    strcpy(_topicPrefix, prefix);
+  }
 }
 
 void OXRS_MQTT::setTopicSuffix(const char * suffix)
 { 
-  strcpy(_topicSuffix, suffix);
+  if (suffix == NULL) 
+  {
+    _topicSuffix[0] = '\0';
+  }
+  else
+  {
+    strcpy(_topicSuffix, suffix);
+  }
 }
 
 char * OXRS_MQTT::getWildcardTopic(char topic[])
