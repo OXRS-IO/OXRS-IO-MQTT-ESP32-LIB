@@ -8,8 +8,9 @@ OXRS_MQTT			KEYWORD1
 # Methods and Functions (KEYWORD2)
 #######################################
 
-setClientId			KEYWORD2
+setBroker				KEYWORD2
 setAuth				KEYWORD2
+setClientId			KEYWORD2
 setTopicPrefix		KEYWORD2
 setTopicSuffix		KEYWORD2
 getWildcardTopic	KEYWORD2
@@ -19,6 +20,7 @@ getStatusTopic		KEYWORD2
 getTelemetryTopic	KEYWORD2
 onConfig			KEYWORD2
 onCommand			KEYWORD2
+begin				KEYWORD2
 loop				KEYWORD2
 receive				KEYWORD2
 publishStatus		KEYWORD2
