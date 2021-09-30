@@ -28,8 +28,7 @@ static const char * MQTT_LWT_OFFLINE      = "offline";
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
 
-/* You only need to format SPIFFS the first time you run a
-   test or else use the SPIFFS plugin to create a partition */
+// Format SPIFFS if mounting fails - usually due to brand new device
 #define FORMAT_SPIFFS_IF_FAILED     true
 
 // Callback type for onConfig() and onCommand()

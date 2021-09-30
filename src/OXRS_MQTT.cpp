@@ -5,7 +5,12 @@
 
 #include "Arduino.h"
 #include "OXRS_MQTT.h"
+
+#if defined(ARDUINO_ARCH_ESP32)
 #include <SPIFFS.h>
+#elif defined(ARDUINO_ARCH_ESP8266)
+#include <FS.h>
+#endif
 
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
@@ -233,24 +238,28 @@ boolean OXRS_MQTT::publishTelemetry(JsonObject json)
 
 void OXRS_MQTT::_mountFS()
 {
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
   Serial.print(F("[file] mounting SPIFFS..."));
-  if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED))
+  if (!SPIFFS.begin())
   { 
-    Serial.println(F("failed to mount FS"));
+    Serial.println(F("failed, might need formatting?"));
     return; 
   }
   Serial.println(F("done"));
+#endif
 }
 
 void OXRS_MQTT::_formatFS()
 {
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
   Serial.print(F("[file] formatting SPIFFS..."));
   if (!SPIFFS.format())
   { 
-    Serial.println(F("failed to format FS"));
+    Serial.println(F("failed"));
     return; 
   }
   Serial.println(F("done"));
+#endif
 }
 
 void OXRS_MQTT::_restoreSetup(DynamicJsonDocument * json)
@@ -303,6 +312,7 @@ void OXRS_MQTT::_restoreConfig(DynamicJsonDocument * json)
 
 boolean OXRS_MQTT::_loadJson(DynamicJsonDocument * json, const char * filename)
 {
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
   Serial.print(F("[file] reading "));  
   Serial.print(filename);
   Serial.print(F("..."));
@@ -330,12 +340,15 @@ boolean OXRS_MQTT::_loadJson(DynamicJsonDocument * json, const char * filename)
     Serial.println(error.f_str());
     return false;
   }
-
   return true;
+#else
+  return false;
+#endif
 }
 
 boolean OXRS_MQTT::_saveJson(DynamicJsonDocument * json, const char * filename)
 {
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
   Serial.print(F("[file] writing "));
   Serial.print(filename);
   Serial.print(F("..."));
@@ -350,6 +363,9 @@ boolean OXRS_MQTT::_saveJson(DynamicJsonDocument * json, const char * filename)
   Serial.print(serializeJson(*json, file));
   Serial.println(F(" bytes written"));
   return true;
+#else
+  return false;
+#endif
 }
 
 int OXRS_MQTT::_connect(void)
