@@ -10,6 +10,9 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
+static const char * MQTT_SETUP_FILENAME   = "/mqtt_setup.json";
+static const char * MQTT_CONFIG_FILENAME  = "/mqtt_config.json";
+
 static const char * MQTT_CONFIG_TOPIC     = "conf";
 static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
@@ -25,18 +28,22 @@ static const char * MQTT_LWT_OFFLINE      = "offline";
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
 
+/* You only need to format SPIFFS the first time you run a
+   test or else use the SPIFFS plugin to create a partition */
+#define FORMAT_SPIFFS_IF_FAILED     true
+
 // Callback type for onConfig() and onCommand()
-typedef void (*callback)(JsonObject);
+typedef void (* jsonCallback)(JsonObject);
 
 class OXRS_MQTT
 {
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void setClientId(const char * deviceId);
-    void setClientId(const char * deviceType, byte deviceMac[6]);
+    void setBroker(const char * broker, uint16_t port);
     void setAuth(const char * username, const char * password);
-
+    void setClientId(const char * clientId);
+    void setClientId(const char * deviceType, byte deviceMac[6]);
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
@@ -46,11 +53,12 @@ class OXRS_MQTT
     char * getStatusTopic(char topic[]);
     char * getTelemetryTopic(char topic[]);
     
-    void onConfig(callback);
-    void onCommand(callback);
+    void onConfig(jsonCallback);
+    void onCommand(jsonCallback);
 
-    void loop();
-    void receive(char * topic, uint8_t * payload, unsigned int length);
+    void begin(void);
+    void loop(void);
+    void receive(char * topic, byte * payload, unsigned int length);
 
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);
@@ -58,22 +66,35 @@ class OXRS_MQTT
   private:
     PubSubClient* _client;
     
-    char _clientId[32];
+    char _broker[32];
+    uint16_t _port;
     char _username[32];
     char _password[32];
-
+    char _clientId[32];
     char _topicPrefix[32];
     char _topicSuffix[32];
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
 
-    boolean _connect();
+    void _mountFS(void);
+    void _formatFS(void);
 
-    callback _onConfig;
-    callback _onCommand;
+    void _restoreSetup(DynamicJsonDocument * json);
+    void _restoreConfig(DynamicJsonDocument * json);
+
+    boolean _loadJson(DynamicJsonDocument * json, const char * filename);
+    boolean _saveJson(DynamicJsonDocument * json, const char * filename);
+
+    // Returns PubSubClient connection state 
+    // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
+    int _connect(void);
+
+    jsonCallback _onConfig;
+    jsonCallback _onCommand;
     
-    void _callback(const char * topicType, JsonObject json);
+    void _handlePayload(const char * topicType, DynamicJsonDocument * json);
+    void _fireCallback(const char * topicType, JsonObject json);
     boolean _publish(char * topic, JsonObject json);
 
     char * _getTopic(char topic[], const char * topicType);
