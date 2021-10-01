@@ -22,6 +22,7 @@ static const char * MQTT_LWT_SUFFIX       = "lwt";
 static const char * MQTT_LWT_ONLINE       = "online";
 static const char * MQTT_LWT_OFFLINE      = "offline";
 
+#define MQTT_DEFAULT_PORT           1883
 #define MQTT_LWT_QOS                0
 #define MQTT_LWT_RETAIN             1
 
@@ -38,6 +39,9 @@ class OXRS_MQTT
 {
   public:
     OXRS_MQTT(PubSubClient& client);
+
+    void getSetup(DynamicJsonDocument * json);
+    void setSetup(DynamicJsonDocument * json);
 
     void setBroker(const char * broker, uint16_t port);
     void setAuth(const char * username, const char * password);
@@ -58,7 +62,8 @@ class OXRS_MQTT
     void begin(void);
     void loop(void);
     void receive(char * topic, byte * payload, unsigned int length);
-
+    void factoryReset();
+    
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);
 
@@ -88,6 +93,7 @@ class OXRS_MQTT
     // Returns PubSubClient connection state 
     // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
     int _connect(void);
+    void _reconnect(void);
 
     jsonCallback _onConfig;
     jsonCallback _onCommand;
