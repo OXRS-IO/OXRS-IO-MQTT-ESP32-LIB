@@ -42,6 +42,7 @@ class OXRS_MQTT
 
     void getSetup(DynamicJsonDocument * json);
     void setSetup(DynamicJsonDocument * json);
+    void factoryReset(boolean formatFS);
 
     void setBroker(const char * broker, uint16_t port);
     void setAuth(const char * username, const char * password);
@@ -62,7 +63,6 @@ class OXRS_MQTT
     void begin(void);
     void loop(void);
     void receive(char * topic, byte * payload, unsigned int length);
-    void factoryReset();
     
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);

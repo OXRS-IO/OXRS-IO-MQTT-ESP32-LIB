@@ -75,6 +75,20 @@ void OXRS_MQTT::setSetup(DynamicJsonDocument * json)
   _reconnect();
 }
 
+void OXRS_MQTT::factoryReset(boolean formatFS)
+{
+  if (formatFS)
+  {
+    _formatFS();
+  }
+  else
+  {
+    DynamicJsonDocument empty(0);
+    _saveJson(&empty, MQTT_SETUP_FILENAME);
+    _saveJson(&empty, MQTT_CONFIG_FILENAME);
+  }
+}
+
 void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
 {
     strcpy(_broker, broker);
@@ -282,14 +296,6 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   }
 }
 
-void OXRS_MQTT::factoryReset(void)
-{
-  // NOTE: we don't want to format the SPIFFS as there might be other data on there
-  DynamicJsonDocument empty(0);
-  _saveJson(&empty, MQTT_SETUP_FILENAME);
-  _saveJson(&empty, MQTT_CONFIG_FILENAME);
-}
-
 boolean OXRS_MQTT::publishStatus(JsonObject json)
 {
   char topic[64];
@@ -309,6 +315,19 @@ void OXRS_MQTT::_mountFS()
   if (!SPIFFS.begin())
   { 
     Serial.println(F("failed, might need formatting?"));
+    return; 
+  }
+  Serial.println(F("done"));
+#endif
+}
+
+void OXRS_MQTT::_formatFS()
+{
+#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
+  Serial.print(F("[file] formatting SPIFFS..."));
+  if (!SPIFFS.format())
+  { 
+    Serial.println(F("failed"));
     return; 
   }
   Serial.println(F("done"));
