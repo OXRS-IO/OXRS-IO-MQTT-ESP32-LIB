@@ -10,9 +10,6 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
-static const char * MQTT_SETUP_FILENAME   = "/mqtt_setup.json";
-static const char * MQTT_CONFIG_FILENAME  = "/mqtt_config.json";
-
 static const char * MQTT_CONFIG_TOPIC     = "conf";
 static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
@@ -29,9 +26,6 @@ static const char * MQTT_LWT_OFFLINE      = "offline";
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
 
-// Format SPIFFS if mounting fails - usually due to brand new device
-#define FORMAT_SPIFFS_IF_FAILED     true
-
 // Callback type for onConfig() and onCommand()
 typedef void (* jsonCallback)(JsonObject);
 
@@ -40,9 +34,7 @@ class OXRS_MQTT
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void getSetup(DynamicJsonDocument * json);
-    void setSetup(DynamicJsonDocument * json);
-    void factoryReset(boolean formatFS);
+    void setJson(DynamicJsonDocument * json);
 
     void setBroker(const char * broker, uint16_t port);
     void setAuth(const char * username, const char * password);
@@ -60,9 +52,9 @@ class OXRS_MQTT
     void onConfig(jsonCallback);
     void onCommand(jsonCallback);
 
-    void begin(void);
-    void loop(void);
+    void loop(void);    
     void receive(char * topic, byte * payload, unsigned int length);
+    void reconnect(void);
     
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);
@@ -81,27 +73,17 @@ class OXRS_MQTT
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
 
-    void _mountFS(void);
-    void _formatFS(void);
-
-    void _restoreSetup(DynamicJsonDocument * json);
-    void _restoreConfig(DynamicJsonDocument * json);
-
-    boolean _loadJson(DynamicJsonDocument * json, const char * filename);
-    boolean _saveJson(DynamicJsonDocument * json, const char * filename);
-
     // Returns PubSubClient connection state 
     // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
     int _connect(void);
-    void _reconnect(void);
 
     jsonCallback _onConfig;
     jsonCallback _onCommand;
     
     void _handlePayload(const char * topicType, DynamicJsonDocument * json);
     void _fireCallback(const char * topicType, JsonObject json);
-    boolean _publish(char * topic, JsonObject json);
 
+    boolean _publish(char * topic, JsonObject json);
     char * _getTopic(char topic[], const char * topicType);
 };
 
