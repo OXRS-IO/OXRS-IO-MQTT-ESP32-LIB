@@ -15,16 +15,12 @@ static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
 static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 
-static const char * MQTT_LWT_SUFFIX       = "lwt";
-static const char * MQTT_LWT_ONLINE       = "online";
-static const char * MQTT_LWT_OFFLINE      = "offline";
-
 #define MQTT_DEFAULT_PORT           1883
-#define MQTT_LWT_QOS                0
-#define MQTT_LWT_RETAIN             1
-
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
+
+// Callback type for onConnected()
+typedef void (* voidCallback)(void);
 
 // Callback type for onConfig() and onCommand()
 typedef void (* jsonCallback)(JsonObject);
@@ -34,12 +30,12 @@ class OXRS_MQTT
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void setJson(DynamicJsonDocument * json);
+    void getJson(JsonObject * json);
+    void setJson(JsonObject * json);
 
     void setBroker(const char * broker, uint16_t port);
     void setAuth(const char * username, const char * password);
     void setClientId(const char * clientId);
-    void setClientId(const char * deviceType, byte deviceMac[6]);
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
@@ -49,21 +45,23 @@ class OXRS_MQTT
     char * getStatusTopic(char topic[]);
     char * getTelemetryTopic(char topic[]);
     
+    void onConnected(voidCallback);
     void onConfig(jsonCallback);
     void onCommand(jsonCallback);
 
-    void loop(void);    
+    void loop(void);
     void receive(char * topic, byte * payload, unsigned int length);
     void reconnect(void);
     
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);
+    boolean publish(JsonObject json, char * topic, boolean retained);
 
   private:
     PubSubClient* _client;
     
     char _broker[32];
-    uint16_t _port;
+    uint16_t _port = MQTT_DEFAULT_PORT;
     char _username[32];
     char _password[32];
     char _clientId[32];
@@ -77,13 +75,12 @@ class OXRS_MQTT
     // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
     int _connect(void);
 
+    voidCallback _onConnected;
     jsonCallback _onConfig;
     jsonCallback _onCommand;
     
-    void _handlePayload(const char * topicType, DynamicJsonDocument * json);
     void _fireCallback(const char * topicType, JsonObject json);
 
-    boolean _publish(char * topic, JsonObject json);
     char * _getTopic(char topic[], const char * topicType);
 };
 
