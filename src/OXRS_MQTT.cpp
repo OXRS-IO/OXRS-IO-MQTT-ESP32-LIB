@@ -250,6 +250,9 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     }
     Serial.println();
   }
+  
+  // Ignore if an empty message
+  if (length == 0) return;
 
   // Tokenise the topic (skipping any prefix) to get the root topic type
   char * topicType;
