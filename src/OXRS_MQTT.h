@@ -19,7 +19,7 @@ static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
 
-// Callback type for onConnected()
+// Callback type for onConnected() and onDisconnected()
 typedef void (* voidCallback)(void);
 
 // Callback type for onConfig() and onCommand()
