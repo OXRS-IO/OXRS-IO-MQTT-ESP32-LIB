@@ -6,15 +6,75 @@
 #include "Arduino.h"
 #include "OXRS_MQTT.h"
 
-#if defined(ARDUINO_ARCH_ESP32)
-#include <SPIFFS.h>
-#elif defined(ARDUINO_ARCH_ESP8266)
-#include <FS.h>
-#endif
-
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
+}
+
+void OXRS_MQTT::getJson(JsonObject * json)
+{
+  // NOTE: we don't expose any authentication details
+  if (strlen(_broker) > 0)
+  {
+    json->getOrAddMember("broker").set(_broker);
+    json->getOrAddMember("port").set(_port);
+  }
+  
+  if (strlen(_clientId) > 0)
+  {
+    json->getOrAddMember("clientId").set(_clientId);
+
+    char topic[64];
+    json->getOrAddMember("configTopic").set(getConfigTopic(topic));
+    json->getOrAddMember("commandTopic").set(getCommandTopic(topic));
+    json->getOrAddMember("statusTopic").set(getStatusTopic(topic));
+    json->getOrAddMember("telemetryTopic").set(getTelemetryTopic(topic));
+  }
+  
+  if (strlen(_topicPrefix) > 0)
+  {
+    json->getOrAddMember("topicPrefix").set(_topicPrefix);
+  }
+  
+  if (strlen(_topicSuffix) > 0)
+  {
+    json->getOrAddMember("topicSuffix").set(_topicSuffix);
+  }
+}
+
+void OXRS_MQTT::setJson(JsonObject * json)
+{
+  if (json->containsKey("broker"))
+  { 
+    if (json->containsKey("port"))
+    { 
+      setBroker(json->getMember("broker"), json->getMember("port").as<uint16_t>());
+    }
+    else
+    {
+      setBroker(json->getMember("broker"), MQTT_DEFAULT_PORT);      
+    }
+  }
+  
+  if (json->containsKey("clientId"))
+  { 
+    setClientId(json->getMember("clientId"));
+  }
+  
+  if (json->containsKey("username") && json->containsKey("password"))
+  { 
+    setAuth(json->getMember("username"), json->getMember("password"));
+  }
+  
+  if (json->containsKey("topicPrefix"))
+  { 
+    setTopicPrefix(json->getMember("topicPrefix"));
+  }
+
+  if (json->containsKey("topicSuffix"))
+  { 
+    setTopicSuffix(json->getMember("topicSuffix"));
+  }
 }
 
 void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
@@ -40,11 +100,6 @@ void OXRS_MQTT::setAuth(const char * username, const char * password)
 void OXRS_MQTT::setClientId(const char * clientId)
 { 
   strcpy(_clientId, clientId);
-}
-
-void OXRS_MQTT::setClientId(const char * deviceType, byte deviceMac[6])
-{
-  sprintf_P(_clientId, PSTR("%s-%02x%02x%02x"), deviceType, deviceMac[3], deviceMac[4], deviceMac[5]);  
 }
 
 void OXRS_MQTT::setTopicPrefix(const char * prefix)
@@ -96,34 +151,24 @@ char * OXRS_MQTT::getTelemetryTopic(char topic[])
   return _getTopic(topic, MQTT_TELEMETRY_TOPIC);
 }
 
+void OXRS_MQTT::onConnected(voidCallback callback)
+{ 
+  _onConnected = callback;
+}
+
+void OXRS_MQTT::onDisconnected(voidCallback callback)
+{ 
+  _onDisconnected = callback;
+}
+
 void OXRS_MQTT::onConfig(jsonCallback callback)
 { 
-  _onConfig = callback; 
+  _onConfig = callback;
 }
 
 void OXRS_MQTT::onCommand(jsonCallback callback)
 { 
-  _onCommand = callback; 
-}
-
-void OXRS_MQTT::begin(void)
-{
-  // Mount the SPIFFS
-  _mountFS();
-
-  DynamicJsonDocument json(2048);
-
-  // Restore any persisted setup
-  if (_loadJson(&json, MQTT_SETUP_FILENAME))
-  {
-    _restoreSetup(&json);
-  }  
-  
-  // Restore any persisted config
-  if (_loadJson(&json, MQTT_CONFIG_FILENAME))
-  {
-    _restoreConfig(&json);
-  }
+  _onCommand = callback;
 }
 
 void OXRS_MQTT::loop(void)
@@ -132,7 +177,7 @@ void OXRS_MQTT::loop(void)
   {
     // Currently connected so ensure we are ready to reconnect if it drops
     _backoff = 0;
-    _lastReconnectMs = millis();    
+    _lastReconnectMs = millis();
   }
   else
   {
@@ -140,43 +185,48 @@ void OXRS_MQTT::loop(void)
     uint32_t backoffMs = (uint32_t)_backoff * MQTT_BACKOFF_SECS * 1000;
     if ((millis() - _lastReconnectMs) > backoffMs)
     {
-      Serial.print(F("[mqtt] connecting to "));
-      Serial.print(_broker);
-      Serial.print(F(":"));
-      Serial.print(_port);      
-      if (strlen(_username) > 0)
+      if (strlen(_broker) == 0)
       {
-        Serial.print(F(" as "));
-        Serial.print(_username);
-      }
-      Serial.print(F("..."));
-
-      int state = _connect();
-      if (state == 0) 
-      {
-        Serial.println(F("done"));
-
-        char topic[64];
-        Serial.print(F("[mqtt] config    <-- "));
-        Serial.println(getConfigTopic(topic));
-        Serial.print(F("[mqtt] commands  <-- "));
-        Serial.println(getCommandTopic(topic));
-        Serial.print(F("[mqtt] status    --> "));
-        Serial.println(getStatusTopic(topic));
-        Serial.print(F("[mqtt] telemetry --> "));
-        Serial.println(getTelemetryTopic(topic));
-      }
-      else
-      {
-        // Reconnection failed, so backoff
+        // No broker configured, so backoff
         if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
         _lastReconnectMs = millis();
 
-        Serial.print(F("failed with error "));
-        Serial.print(state);
-        Serial.print(F(", retry in "));
+        Serial.print(F("[mqtt] no broker configured, retry in "));
         Serial.print(_backoff * MQTT_BACKOFF_SECS);
         Serial.println(F("s"));
+      }
+      else
+      {
+        // Attempt to connect
+        Serial.print(F("[mqtt] connecting to "));
+        Serial.print(_broker);
+        Serial.print(F(":"));
+        Serial.print(_port);      
+        if (strlen(_username) > 0)
+        {
+          Serial.print(F(" as "));
+          Serial.print(_username);
+        }
+        Serial.println(F("..."));
+      
+        int state = _connect();
+        if (state == 0) 
+        {
+          // Connection successful
+          Serial.println(F("[mqtt] connected"));
+        }
+        else
+        {
+          // Reconnection failed, so backoff
+          if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
+          _lastReconnectMs = millis();
+
+          Serial.print(F("[mqtt] failed to connect with error "));
+          Serial.print(state);
+          Serial.print(F(", retry in "));
+          Serial.print(_backoff * MQTT_BACKOFF_SECS);
+          Serial.println(F("s"));
+        }
       }
     }
   }
@@ -185,7 +235,7 @@ void OXRS_MQTT::loop(void)
 void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
 {
   // Log each received message to serial for debugging
-  Serial.print(F("[mqtt-rx] "));
+  Serial.print(F("[mqtt] [rx] "));
   Serial.print(topic);
   Serial.print(F(" "));
   if (length == 0)
@@ -214,158 +264,60 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     return;
   }
 
-  // Handle this JSON payload
-  _handlePayload(topicType, &json);
-
-  // If this is config then save so it can be restored on startup
-  if (strncmp(topicType, MQTT_CONFIG_TOPIC, 4) == 0)
+  // Process JSON payload
+  if (json.is<JsonArray>())
   {
-    _saveJson(&json, MQTT_CONFIG_FILENAME);
+    JsonArray array = json.as<JsonArray>();
+    for (JsonVariant v : array)
+    {
+      _fireCallback(topicType, v.as<JsonObject>());
+    }
   }
+  else
+  {
+    _fireCallback(topicType, json.as<JsonObject>());
+  }
+}
+
+void OXRS_MQTT::reconnect(void)
+{
+  // Disconnect from MQTT broker
+  _client->disconnect();
+  
+  // Force a connect attempt immediately
+  _backoff = 0;
+  _lastReconnectMs = millis();
 }
 
 boolean OXRS_MQTT::publishStatus(JsonObject json)
 {
   char topic[64];
-  return _publish(getStatusTopic(topic), json);
+  return publish(json, getStatusTopic(topic), false);
 }
 
 boolean OXRS_MQTT::publishTelemetry(JsonObject json)
 {
   char topic[64];
-  return _publish(getTelemetryTopic(topic), json);
+  return publish(json, getTelemetryTopic(topic), false);
 }
 
-void OXRS_MQTT::_mountFS()
+boolean OXRS_MQTT::publish(JsonObject json, char * topic, boolean retained)
 {
-#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
-  Serial.print(F("[file] mounting SPIFFS..."));
-  if (!SPIFFS.begin())
-  { 
-    Serial.println(F("failed, might need formatting?"));
-    return; 
-  }
-  Serial.println(F("done"));
-#endif
-}
-
-void OXRS_MQTT::_formatFS()
-{
-#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
-  Serial.print(F("[file] formatting SPIFFS..."));
-  if (!SPIFFS.format())
-  { 
-    Serial.println(F("failed"));
-    return; 
-  }
-  Serial.println(F("done"));
-#endif
-}
-
-void OXRS_MQTT::_restoreSetup(DynamicJsonDocument * json)
-{
-  Serial.print(F("[mqtt] restoring setup: "));
-  serializeJson(*json, Serial);
-  Serial.println();
-
-  if (json->containsKey("broker"))
-  {
-    if (json->containsKey("port"))
-    { 
-      setBroker(json->getMember("broker"), json->getMember("port").as<uint16_t>());
-    }
-    else
-    {
-      setBroker(json->getMember("broker"), 1883);
-    }
-  }
-    
-  if (json->containsKey("clientId"))
-  { 
-    setClientId(json->getMember("clientId"));
-  }
-    
-  if (json->containsKey("username"))
-  { 
-    setAuth(json->getMember("username"), json->getMember("password"));
-  }
-    
-  if (json->containsKey("topicPrefix"))
-  {
-    setTopicPrefix(json->getMember("topicPrefix"));
-  }
-    
-  if (json->containsKey("topicSuffix"))
-  {
-    setTopicPrefix(json->getMember("topicSuffix"));
-  }
-}
-
-void OXRS_MQTT::_restoreConfig(DynamicJsonDocument * json)
-{
-  Serial.print(F("[mqtt] restoring config: "));
-  serializeJson(*json, Serial);
-  Serial.println();
-
-  _handlePayload(MQTT_CONFIG_TOPIC, json);
-}
-
-boolean OXRS_MQTT::_loadJson(DynamicJsonDocument * json, const char * filename)
-{
-#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
-  Serial.print(F("[file] reading "));  
-  Serial.print(filename);
-  Serial.print(F("..."));
-
-  File file = SPIFFS.open(filename, "r");
-  if (!file) 
-  {
-    Serial.println(F("failed to open file"));
-    return false;
-  }
+  if (!_client->connected()) { return false; }
   
-  if (file.size() == 0)
-  {
-    Serial.println(F("empty"));
-    return false;
-  }
-
-  Serial.print(file.size());
-  Serial.println(F(" bytes read"));
+  char buffer[256];
+  serializeJson(json, buffer);
   
-  DeserializationError error = deserializeJson(*json, file);
-  if (error) 
-  {
-    Serial.print(F("[erro] failed to deserialise JSON: "));
-    Serial.println(error.f_str());
-    return false;
-  }
+  // Log each published message to serial for debugging
+  Serial.print(F("[mqtt] [tx] "));
+  Serial.print(topic);
+  Serial.print(F(" "));
+  Serial.print(buffer);
+  if (retained) { Serial.print(F(" [retained]")); }
+  Serial.println();
+  
+  _client->publish(topic, buffer, retained);
   return true;
-#else
-  return false;
-#endif
-}
-
-boolean OXRS_MQTT::_saveJson(DynamicJsonDocument * json, const char * filename)
-{
-#if defined(ARDUINO_ARCH_ESP32) || defined(ARDUINO_ARCH_ESP8266)
-  Serial.print(F("[file] writing "));
-  Serial.print(filename);
-  Serial.print(F("..."));
-
-  File file = SPIFFS.open(filename, "w");
-  if (!file) 
-  {
-    Serial.println(F("failed to open file"));
-    return false;
-  }
-
-  Serial.print(serializeJson(*json, file));
-  Serial.println(F(" bytes written"));
-  return true;
-#else
-  return false;
-#endif
 }
 
 int OXRS_MQTT::_connect(void)
@@ -374,38 +326,48 @@ int OXRS_MQTT::_connect(void)
   _client->setServer(_broker, _port);
 
   // Get our LWT topic
-  char topic[64];
-  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), MQTT_LWT_SUFFIX);
+  char lwtTopic[64];
+  sprintf_P(lwtTopic, PSTR("%s/%s"), getStatusTopic(lwtTopic), "lwt");
+  
+  // Build our LWT payload
+  StaticJsonDocument<16> lwtPayload;
+  lwtPayload["online"] = false;
+  
+  // Get our LWT offline payload as raw string
+  char lwtOfflinePayload[18];
+  serializeJson(lwtPayload, lwtOfflinePayload);
   
   // Attempt to connect to the MQTT broker
-  boolean success = _client->connect(_clientId, _username, _password, topic, MQTT_LWT_QOS, MQTT_LWT_RETAIN, MQTT_LWT_OFFLINE);
+  boolean success = _client->connect(_clientId, _username, _password, lwtTopic, 0, true, lwtOfflinePayload);
   if (success)
   {
-    // Publish our 'online' message so anything listening is notified
-    _client->publish(topic, MQTT_LWT_ONLINE, MQTT_LWT_RETAIN);
-
     // Subscribe to our config and command topics
-    _client->subscribe(getConfigTopic(topic));
-    _client->subscribe(getCommandTopic(topic));
-  }
+    char topic[64];
 
-  return _client->state();
-}
+    Serial.print(F("[mqtt] subscribing to "));
+    getConfigTopic(topic);
+    Serial.println(topic);
+    _client->subscribe(topic);
+    
+    Serial.print(F("[mqtt] subscribing to "));
+    getCommandTopic(topic);
+    Serial.println(topic);
+    _client->subscribe(topic);
 
-void OXRS_MQTT::_handlePayload(const char * topicType, DynamicJsonDocument * json)
-{
-  if (json->is<JsonArray>())
-  {
-    JsonArray array = json->as<JsonArray>();
-    for (JsonVariant v : array)
-    {
-      _fireCallback(topicType, v.as<JsonObject>());
-    }
+    // Publish our LWT online payload now we are ready
+    lwtPayload["online"] = true;
+    publish(lwtPayload.as<JsonObject>(), lwtTopic, true);
+ 
+    // Fire the connected callback
+    if (_onConnected) { _onConnected(); }
   }
   else
   {
-    _fireCallback(topicType, json->as<JsonObject>());
+    // Fire the disconnected callback
+    if (_onDisconnected) { _onDisconnected(); }
   }
+
+  return _client->state();
 }
 
 void OXRS_MQTT::_fireCallback(const char * topicType, JsonObject json)
@@ -437,23 +399,6 @@ void OXRS_MQTT::_fireCallback(const char * topicType, JsonObject json)
   {
     Serial.println(F("[warn] invalid topic, ignoring message"));
   }  
-}
-
-boolean OXRS_MQTT::_publish(char * topic, JsonObject json)
-{
-  if (!_client->connected()) { return false; }
-  
-  char buffer[256];
-  serializeJson(json, buffer);
-  
-  // Log each published message to serial for debugging
-  Serial.print(F("[mqtt-tx] "));
-  Serial.print(topic);
-  Serial.print(F(" "));
-  Serial.println(buffer);
-  
-  _client->publish(topic, buffer);
-  return true;
 }
 
 char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
