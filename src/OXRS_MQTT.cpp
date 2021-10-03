@@ -141,6 +141,12 @@ char * OXRS_MQTT::getCommandTopic(char topic[])
   return _getTopic(topic, MQTT_COMMAND_TOPIC);
 }
 
+char * OXRS_MQTT::getAdoptTopic(char topic[])
+{
+  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "adopt");
+  return topic;
+}
+
 char * OXRS_MQTT::getStatusTopic(char topic[])
 {
   return _getTopic(topic, MQTT_STATUS_TOPIC);
@@ -292,35 +298,22 @@ void OXRS_MQTT::reconnect(void)
   _lastReconnectMs = millis();
 }
 
+boolean OXRS_MQTT::publishAdopt(JsonObject json)
+{
+  char topic[64];
+  return _publish(json, getAdoptTopic(topic), true);
+}
+
 boolean OXRS_MQTT::publishStatus(JsonObject json)
 {
   char topic[64];
-  return publish(json, getStatusTopic(topic), false);
+  return _publish(json, getStatusTopic(topic), false);
 }
 
 boolean OXRS_MQTT::publishTelemetry(JsonObject json)
 {
   char topic[64];
-  return publish(json, getTelemetryTopic(topic), false);
-}
-
-boolean OXRS_MQTT::publish(JsonObject json, char * topic, boolean retained)
-{
-  if (!_client->connected()) { return false; }
-  
-  char buffer[256];
-  serializeJson(json, buffer);
-  
-  // Log each published message to serial for debugging
-  Serial.print(F("[mqtt] [tx] "));
-  Serial.print(topic);
-  Serial.print(F(" "));
-  Serial.print(buffer);
-  if (retained) { Serial.print(F(" [retained]")); }
-  Serial.println();
-  
-  _client->publish(topic, buffer, retained);
-  return true;
+  return _publish(json, getTelemetryTopic(topic), false);
 }
 
 int OXRS_MQTT::_connect(void)
@@ -359,7 +352,7 @@ int OXRS_MQTT::_connect(void)
 
     // Publish our LWT online payload now we are ready
     lwtPayload["online"] = true;
-    publish(lwtPayload.as<JsonObject>(), lwtTopic, true);
+    _publish(lwtPayload.as<JsonObject>(), lwtTopic, true);
  
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
@@ -430,4 +423,23 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   }
   
   return topic;
+}
+
+boolean OXRS_MQTT::_publish(JsonObject json, char * topic, boolean retained)
+{
+  if (!_client->connected()) { return false; }
+  
+  char buffer[2048];
+  serializeJson(json, buffer);
+  
+  // Log each published message to serial for debugging
+  Serial.print(F("[mqtt] [tx] "));
+  Serial.print(topic);
+  Serial.print(F(" "));
+  Serial.print(buffer);
+  if (retained) { Serial.print(F(" [retained]")); }
+  Serial.println();
+  
+  _client->publish(topic, buffer, retained);
+  return true;
 }

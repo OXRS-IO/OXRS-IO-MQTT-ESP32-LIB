@@ -40,8 +40,11 @@ class OXRS_MQTT
     void setTopicSuffix(const char * suffix);
     
     char * getWildcardTopic(char topic[]);
+
     char * getConfigTopic(char topic[]);
     char * getCommandTopic(char topic[]);
+
+    char * getAdoptTopic(char topic[]);
     char * getStatusTopic(char topic[]);
     char * getTelemetryTopic(char topic[]);
     
@@ -54,9 +57,9 @@ class OXRS_MQTT
     void receive(char * topic, byte * payload, unsigned int length);
     void reconnect(void);
     
+    boolean publishAdopt(JsonObject json);
     boolean publishStatus(JsonObject json);
     boolean publishTelemetry(JsonObject json);
-    boolean publish(JsonObject json, char * topic, boolean retained);
 
   private:
     PubSubClient* _client;
@@ -84,6 +87,7 @@ class OXRS_MQTT
     void _fireCallback(const char * topicType, JsonObject json);
 
     char * _getTopic(char topic[], const char * topicType);
+    boolean _publish(JsonObject json, char * topic, boolean retained);
 };
 
 #endif
