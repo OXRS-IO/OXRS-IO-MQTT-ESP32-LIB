@@ -156,6 +156,11 @@ void OXRS_MQTT::onConnected(voidCallback callback)
   _onConnected = callback;
 }
 
+void OXRS_MQTT::onDisconnected(voidCallback callback)
+{ 
+  _onDisconnected = callback;
+}
+
 void OXRS_MQTT::onConfig(jsonCallback callback)
 { 
   _onConfig = callback;
@@ -345,8 +350,13 @@ int OXRS_MQTT::_connect(void)
     _client->subscribe(getConfigTopic(topic));
     _client->subscribe(getCommandTopic(topic));
     
-    // Fire our callback
+    // Fire the connected callback
     if (_onConnected) { _onConnected(); }
+  }
+  else
+  {
+    // Fire the disconnected callback
+    if (_onDisconnected) { _onDisconnected(); }
   }
 
   return _client->state();

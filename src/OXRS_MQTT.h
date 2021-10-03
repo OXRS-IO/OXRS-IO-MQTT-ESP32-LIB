@@ -46,6 +46,7 @@ class OXRS_MQTT
     char * getTelemetryTopic(char topic[]);
     
     void onConnected(voidCallback);
+    void onDisconnected(voidCallback);
     void onConfig(jsonCallback);
     void onCommand(jsonCallback);
 
@@ -76,6 +77,7 @@ class OXRS_MQTT
     int _connect(void);
 
     voidCallback _onConnected;
+    voidCallback _onDisconnected;
     jsonCallback _onConfig;
     jsonCallback _onCommand;
     
