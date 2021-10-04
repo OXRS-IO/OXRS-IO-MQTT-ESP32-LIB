@@ -15,11 +15,12 @@ void OXRS_MQTT::getJson(JsonObject * json)
 {
   json->getOrAddMember("connected").set(_client->connected());
 
-  // NOTE: we don't expose any authentication details
   json->getOrAddMember("broker").set(_broker);
   json->getOrAddMember("port").set(_port);
-  
   json->getOrAddMember("clientId").set(_clientId);
+  
+  // NOTE: we don't expose the password
+  json->getOrAddMember("username").set(_username);
   
   json->getOrAddMember("topicPrefix").set(_topicPrefix);
   json->getOrAddMember("topicSuffix").set(_topicSuffix);
