@@ -13,33 +13,31 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
 
 void OXRS_MQTT::getJson(JsonObject * json)
 {
+  json->getOrAddMember("connected").set(_client->connected());
+
   // NOTE: we don't expose any authentication details
-  if (strlen(_broker) > 0)
-  {
-    json->getOrAddMember("broker").set(_broker);
-    json->getOrAddMember("port").set(_port);
-  }
+  json->getOrAddMember("broker").set(_broker);
+  json->getOrAddMember("port").set(_port);
   
+  json->getOrAddMember("clientId").set(_clientId);
+  
+  json->getOrAddMember("topicPrefix").set(_topicPrefix);
+  json->getOrAddMember("topicSuffix").set(_topicSuffix);
+  
+  // if we have a client id then add the various topics
   if (strlen(_clientId) > 0)
   {
-    json->getOrAddMember("clientId").set(_clientId);
-
     char topic[64];
+
+    json->getOrAddMember("lwtTopic").set(getLwtTopic(topic));
+    json->getOrAddMember("adoptTopic").set(getAdoptTopic(topic));
+
     json->getOrAddMember("configTopic").set(getConfigTopic(topic));
     json->getOrAddMember("commandTopic").set(getCommandTopic(topic));
+
     json->getOrAddMember("statusTopic").set(getStatusTopic(topic));
     json->getOrAddMember("telemetryTopic").set(getTelemetryTopic(topic));
-  }
-  
-  if (strlen(_topicPrefix) > 0)
-  {
-    json->getOrAddMember("topicPrefix").set(_topicPrefix);
-  }
-  
-  if (strlen(_topicSuffix) > 0)
-  {
-    json->getOrAddMember("topicSuffix").set(_topicSuffix);
-  }
+  }  
 }
 
 void OXRS_MQTT::setJson(JsonObject * json)
@@ -131,6 +129,18 @@ char * OXRS_MQTT::getWildcardTopic(char topic[])
   return _getTopic(topic, "+");
 }
 
+char * OXRS_MQTT::getLwtTopic(char topic[])
+{
+  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "lwt");
+  return topic;
+}
+
+char * OXRS_MQTT::getAdoptTopic(char topic[])
+{
+  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "adopt");
+  return topic;
+}
+
 char * OXRS_MQTT::getConfigTopic(char topic[])
 {
   return _getTopic(topic, MQTT_CONFIG_TOPIC);
@@ -139,12 +149,6 @@ char * OXRS_MQTT::getConfigTopic(char topic[])
 char * OXRS_MQTT::getCommandTopic(char topic[])
 {
   return _getTopic(topic, MQTT_COMMAND_TOPIC);
-}
-
-char * OXRS_MQTT::getAdoptTopic(char topic[])
-{
-  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "adopt");
-  return topic;
 }
 
 char * OXRS_MQTT::getStatusTopic(char topic[])
@@ -323,7 +327,7 @@ int OXRS_MQTT::_connect(void)
 
   // Get our LWT topic
   char lwtTopic[64];
-  sprintf_P(lwtTopic, PSTR("%s/%s"), getStatusTopic(lwtTopic), "lwt");
+  getLwtTopic(lwtTopic);
   
   // Build our LWT payload
   StaticJsonDocument<16> lwtPayload;
