@@ -43,6 +43,7 @@ void OXRS_MQTT::getJson(JsonObject * json)
 
 void OXRS_MQTT::setJson(JsonObject * json)
 {
+  // broker is mandatory so don't clear if not explicitly specified
   if (json->containsKey("broker"))
   { 
     if (json->containsKey("port"))
@@ -55,6 +56,7 @@ void OXRS_MQTT::setJson(JsonObject * json)
     }
   }
   
+  // client id is mandatory so don't clear if not explicitly specified
   if (json->containsKey("clientId"))
   { 
     setClientId(json->getMember("clientId"));
@@ -64,15 +66,27 @@ void OXRS_MQTT::setJson(JsonObject * json)
   { 
     setAuth(json->getMember("username"), json->getMember("password"));
   }
+  else
+  {
+    setAuth(NULL, NULL);
+  }
   
   if (json->containsKey("topicPrefix"))
   { 
     setTopicPrefix(json->getMember("topicPrefix"));
   }
+  else
+  {
+    setTopicPrefix(NULL);
+  }
 
   if (json->containsKey("topicSuffix"))
   { 
     setTopicSuffix(json->getMember("topicSuffix"));
+  }
+  else
+  {
+    setTopicSuffix(NULL);
   }
 }
 
