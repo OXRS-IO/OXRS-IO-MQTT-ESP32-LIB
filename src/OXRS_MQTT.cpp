@@ -96,6 +96,11 @@ void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
     _port = port;
 }
 
+void OXRS_MQTT::setClientId(const char * clientId)
+{ 
+  strcpy(_clientId, clientId);
+}
+
 void OXRS_MQTT::setAuth(const char * username, const char * password)
 {
   if (username == NULL)
@@ -108,11 +113,6 @@ void OXRS_MQTT::setAuth(const char * username, const char * password)
     strcpy(_username, username);
     strcpy(_password, password);
   }
-}
-
-void OXRS_MQTT::setClientId(const char * clientId)
-{ 
-  strcpy(_clientId, clientId);
 }
 
 void OXRS_MQTT::setTopicPrefix(const char * prefix)

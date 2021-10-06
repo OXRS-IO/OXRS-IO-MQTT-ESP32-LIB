@@ -34,8 +34,8 @@ class OXRS_MQTT
     void setJson(JsonObject * json);
 
     void setBroker(const char * broker, uint16_t port);
-    void setAuth(const char * username, const char * password);
     void setClientId(const char * clientId);
+    void setAuth(const char * username, const char * password);
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
@@ -67,9 +67,9 @@ class OXRS_MQTT
     
     char _broker[32];
     uint16_t _port = MQTT_DEFAULT_PORT;
+    char _clientId[32];
     char _username[32];
     char _password[32];
-    char _clientId[32];
     char _topicPrefix[32];
     char _topicSuffix[32];
     
