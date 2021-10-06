@@ -287,7 +287,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   DeserializationError error = deserializeJson(json, payload);
   if (error) 
   {
-    Serial.print(F("[erro] failed to deserialise JSON: "));
+    Serial.print(F("[mqtt] failed to deserialise JSON: "));
     Serial.println(error.f_str());
     return;
   }
@@ -396,7 +396,7 @@ void OXRS_MQTT::_fireCallback(const char * topicType, JsonObject json)
     }
     else
     {
-      Serial.println(F("[warn] no config handler, ignoring message"));
+      Serial.println(F("[mqtt] no config handler, ignoring message"));
     }
   }
   else if (strncmp(topicType, MQTT_COMMAND_TOPIC, 4) == 0)
@@ -407,12 +407,12 @@ void OXRS_MQTT::_fireCallback(const char * topicType, JsonObject json)
     }
     else
     {
-      Serial.println(F("[warn] no command handler, ignoring message"));
+      Serial.println(F("[mqtt] no command handler, ignoring message"));
     }
   }
   else
   {
-    Serial.println(F("[warn] invalid topic, ignoring message"));
+    Serial.println(F("[mqtt] invalid topic, ignoring message"));
   }  
 }
 
