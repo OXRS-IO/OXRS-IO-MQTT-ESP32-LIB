@@ -56,6 +56,8 @@ class OXRS_MQTT
 
     void loop(void);
     void receive(char * topic, byte * payload, unsigned int length);
+    
+    boolean connected(void);
     void reconnect(void);
     
     boolean publishAdopt(JsonObject json);

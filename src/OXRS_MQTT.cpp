@@ -307,6 +307,11 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   }
 }
 
+boolean OXRS_MQTT::connected(void)
+{
+  return _client->connected();
+}
+
 void OXRS_MQTT::reconnect(void)
 {
   // Disconnect from MQTT broker
