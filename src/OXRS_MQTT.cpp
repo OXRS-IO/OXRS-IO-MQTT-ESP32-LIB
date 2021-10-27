@@ -11,78 +11,78 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
   this->_client = &client;
 }
 
-void OXRS_MQTT::getJson(JsonObject * json)
+void OXRS_MQTT::getJson(JsonVariant json)
 {
-  json->getOrAddMember("connected").set(_client->connected());
+  json["connected"] = _client->connected();
 
-  json->getOrAddMember("broker").set(_broker);
-  json->getOrAddMember("port").set(_port);
-  json->getOrAddMember("clientId").set(_clientId);
+  json["broker"] = _broker;
+  json["port"] = _port;
+  json["clientId"] = _clientId;
   
   // NOTE: we don't expose the password
-  json->getOrAddMember("username").set(_username);
+  json["username"] = _username;
   
-  json->getOrAddMember("topicPrefix").set(_topicPrefix);
-  json->getOrAddMember("topicSuffix").set(_topicSuffix);
+  json["topicPrefix"] = _topicPrefix;
+  json["topicSuffix"] = _topicSuffix;
   
   // if we have a client id then add the various topics
   if (strlen(_clientId) > 0)
   {
     char topic[64];
 
-    json->getOrAddMember("lwtTopic").set(getLwtTopic(topic));
-    json->getOrAddMember("adoptTopic").set(getAdoptTopic(topic));
+    json["lwtTopic"] = getLwtTopic(topic);
+    json["adoptTopic"] = getAdoptTopic(topic);
 
-    json->getOrAddMember("configTopic").set(getConfigTopic(topic));
-    json->getOrAddMember("commandTopic").set(getCommandTopic(topic));
+    json["configTopic"] = getConfigTopic(topic);
+    json["commandTopic"] = getCommandTopic(topic);
 
-    json->getOrAddMember("statusTopic").set(getStatusTopic(topic));
-    json->getOrAddMember("telemetryTopic").set(getTelemetryTopic(topic));
-  }  
+    json["statusTopic"] = getStatusTopic(topic);
+    json["telemetryTopic"] = getTelemetryTopic(topic);
+  }
 }
 
-void OXRS_MQTT::setJson(JsonObject * json)
+void OXRS_MQTT::setJson(JsonVariant json)
 {
   // broker is mandatory so don't clear if not explicitly specified
-  if (json->containsKey("broker"))
+  if (json.containsKey("broker"))
   { 
-    if (json->containsKey("port"))
+    if (json.containsKey("port"))
     { 
-      setBroker(json->getMember("broker"), json->getMember("port").as<uint16_t>());
+      setBroker(json["broker"], json["port"].as<uint16_t>());
     }
     else
     {
-      setBroker(json->getMember("broker"), MQTT_DEFAULT_PORT);      
+      setBroker(json["broker"], MQTT_DEFAULT_PORT);
     }
   }
   
   // client id is mandatory so don't clear if not explicitly specified
-  if (json->containsKey("clientId"))
+  if (json.containsKey("clientId"))
   { 
-    setClientId(json->getMember("clientId"));
+    setClientId(json["clientId"]);
   }
   
-  if (json->containsKey("username") && json->containsKey("password"))
+  if (json.containsKey("username") && json.containsKey("password"))
   { 
-    setAuth(json->getMember("username"), json->getMember("password"));
+    setAuth(json["username"], json["password"]);
   }
   else
   {
     setAuth(NULL, NULL);
   }
   
-  if (json->containsKey("topicPrefix"))
+  if (json.containsKey("topicPrefix"))
   { 
-    setTopicPrefix(json->getMember("topicPrefix"));
+    setTopicPrefix(json["topicPrefix"]);
   }
   else
   {
     setTopicPrefix(NULL);
   }
 
-  if (json->containsKey("topicSuffix"))
+  if (json.containsKey("topicSuffix"))
   { 
-    setTopicSuffix(json->getMember("topicSuffix"));
+    setTopicSuffix(json["topicSuffix"]);
   }
   else
   {
@@ -292,19 +292,33 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     return;
   }
 
-  // Process JSON payload
-  if (json.is<JsonArray>())
+  // Forward to the appropriate callback
+  if (strncmp(topicType, MQTT_CONFIG_TOPIC, 4) == 0)
   {
-    JsonArray array = json.as<JsonArray>();
-    for (JsonVariant v : array)
+    if (_onConfig)
     {
-      _fireCallback(topicType, v.as<JsonObject>());
+      _onConfig(json.as<JsonVariant>());
+    }
+    else
+    {
+      Serial.println(F("[mqtt] no config handler, ignoring message"));
+    }
+  }
+  else if (strncmp(topicType, MQTT_COMMAND_TOPIC, 4) == 0)
+  {
+    if (_onCommand)
+    {
+      _onCommand(json.as<JsonVariant>());
+    }
+    else
+    {
+      Serial.println(F("[mqtt] no command handler, ignoring message"));
     }
   }
   else
   {
-    _fireCallback(topicType, json.as<JsonObject>());
-  }
+    Serial.println(F("[mqtt] invalid topic, ignoring message"));
+  }  
 }
 
 boolean OXRS_MQTT::connected(void)
@@ -322,19 +336,19 @@ void OXRS_MQTT::reconnect(void)
   _lastReconnectMs = millis();
 }
 
-boolean OXRS_MQTT::publishAdopt(JsonObject json)
+boolean OXRS_MQTT::publishAdopt(JsonVariant json)
 {
   char topic[64];
   return _publish(json, getAdoptTopic(topic), true);
 }
 
-boolean OXRS_MQTT::publishStatus(JsonObject json)
+boolean OXRS_MQTT::publishStatus(JsonVariant json)
 {
   char topic[64];
   return _publish(json, getStatusTopic(topic), false);
 }
 
-boolean OXRS_MQTT::publishTelemetry(JsonObject json)
+boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
 {
   char topic[64];
   return _publish(json, getTelemetryTopic(topic), false);
@@ -376,7 +390,7 @@ int OXRS_MQTT::_connect(void)
 
     // Publish our LWT online payload now we are ready
     lwtPayload["online"] = true;
-    _publish(lwtPayload.as<JsonObject>(), lwtTopic, true);
+    _publish(lwtPayload.as<JsonVariant>(), lwtTopic, true);
  
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
@@ -388,37 +402,6 @@ int OXRS_MQTT::_connect(void)
   }
 
   return _client->state();
-}
-
-void OXRS_MQTT::_fireCallback(const char * topicType, JsonObject json)
-{
-  // Forward to the appropriate callback
-  if (strncmp(topicType, MQTT_CONFIG_TOPIC, 4) == 0)
-  {
-    if (_onConfig) 
-    {
-      _onConfig(json);
-    }
-    else
-    {
-      Serial.println(F("[mqtt] no config handler, ignoring message"));
-    }
-  }
-  else if (strncmp(topicType, MQTT_COMMAND_TOPIC, 4) == 0)
-  {
-    if (_onCommand)
-    {
-      _onCommand(json);
-    }
-    else
-    {
-      Serial.println(F("[mqtt] no command handler, ignoring message"));
-    }
-  }
-  else
-  {
-    Serial.println(F("[mqtt] invalid topic, ignoring message"));
-  }  
 }
 
 char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
@@ -449,7 +432,7 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   return topic;
 }
 
-boolean OXRS_MQTT::_publish(JsonObject json, char * topic, boolean retained)
+boolean OXRS_MQTT::_publish(JsonVariant json, char * topic, boolean retained)
 {
   if (!_client->connected()) { return false; }
   

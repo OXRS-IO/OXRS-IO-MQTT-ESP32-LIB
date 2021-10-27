@@ -23,15 +23,15 @@ static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 typedef void (* voidCallback)(void);
 
 // Callback type for onConfig() and onCommand()
-typedef void (* jsonCallback)(JsonObject);
+typedef void (* jsonCallback)(JsonVariant);
 
 class OXRS_MQTT
 {
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void getJson(JsonObject * json);
-    void setJson(JsonObject * json);
+    void getJson(JsonVariant json);
+    void setJson(JsonVariant json);
 
     void setBroker(const char * broker, uint16_t port);
     void setClientId(const char * clientId);
@@ -60,9 +60,9 @@ class OXRS_MQTT
     boolean connected(void);
     void reconnect(void);
     
-    boolean publishAdopt(JsonObject json);
-    boolean publishStatus(JsonObject json);
-    boolean publishTelemetry(JsonObject json);
+    boolean publishAdopt(JsonVariant json);
+    boolean publishStatus(JsonVariant json);
+    boolean publishTelemetry(JsonVariant json);
 
   private:
     PubSubClient* _client;
@@ -87,10 +87,8 @@ class OXRS_MQTT
     jsonCallback _onConfig;
     jsonCallback _onCommand;
     
-    void _fireCallback(const char * topicType, JsonObject json);
-
     char * _getTopic(char topic[], const char * topicType);
-    boolean _publish(JsonObject json, char * topic, boolean retained);
+    boolean _publish(JsonVariant json, char * topic, boolean retained);
 };
 
 #endif
