@@ -293,7 +293,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   }
 
   // Forward to the appropriate callback
-  if (strncmp(topicType, MQTT_CONFIG_TOPIC, 4) == 0)
+  if (strncmp(topicType, MQTT_CONFIG_TOPIC, strlen(MQTT_CONFIG_TOPIC)) == 0)
   {
     if (_onConfig)
     {
@@ -304,7 +304,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
       Serial.println(F("[mqtt] no config handler, ignoring message"));
     }
   }
-  else if (strncmp(topicType, MQTT_COMMAND_TOPIC, 4) == 0)
+  else if (strncmp(topicType, MQTT_COMMAND_TOPIC, strlen(MQTT_COMMAND_TOPIC)) == 0)
   {
     if (_onCommand)
     {
