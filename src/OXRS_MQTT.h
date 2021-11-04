@@ -30,8 +30,9 @@ class OXRS_MQTT
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void getJson(JsonVariant json);
-    void setJson(JsonVariant json);
+    void getMqttConfig(JsonVariant json);
+    void setMqttConfig(JsonVariant json);
+    void setDeviceConfig(JsonVariant json);
 
     void setBroker(const char * broker, uint16_t port);
     void setClientId(const char * clientId);

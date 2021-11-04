@@ -11,7 +11,7 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
   this->_client = &client;
 }
 
-void OXRS_MQTT::getJson(JsonVariant json)
+void OXRS_MQTT::getMqttConfig(JsonVariant json)
 {
   json["connected"] = _client->connected();
 
@@ -41,7 +41,7 @@ void OXRS_MQTT::getJson(JsonVariant json)
   }
 }
 
-void OXRS_MQTT::setJson(JsonVariant json)
+void OXRS_MQTT::setMqttConfig(JsonVariant json)
 {
   // broker is mandatory so don't clear if not explicitly specified
   if (json.containsKey("broker"))
@@ -87,6 +87,18 @@ void OXRS_MQTT::setJson(JsonVariant json)
   else
   {
     setTopicSuffix(NULL);
+  }
+}
+
+void OXRS_MQTT::setDeviceConfig(JsonVariant json)
+{
+  if (_onConfig)
+  {
+    _onConfig(json);
+  }
+  else
+  {
+    Serial.println(F("[mqtt] no config handler, ignoring device config"));
   }
 }
 
