@@ -374,10 +374,6 @@ int OXRS_MQTT::_connect(void)
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
 
-  // Get our LWT topic
-  char lwtTopic[64];
-  getLwtTopic(lwtTopic);
-  
   // Build our LWT payload
   const int capacity = JSON_OBJECT_SIZE(1);
   StaticJsonDocument<capacity> lwtJson;
@@ -386,7 +382,7 @@ int OXRS_MQTT::_connect(void)
   // Get our LWT offline payload as raw string
   char lwtBuffer[24];
   serializeJson(lwtJson, lwtBuffer);
-  
+ 
   // Attempt to connect to the MQTT broker
   char topic[64];  
   boolean success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
@@ -394,12 +390,14 @@ int OXRS_MQTT::_connect(void)
   {
     // Subscribe to our config and command topics
     Serial.print(F("[mqtt] subscribing to "));
-    Serial.print(getConfigTopic(topic));
-    if (_client->subscribe(topic)) { Serial.println(F("...done")); } else { Serial.println(F("...failed")); }
+    getConfigTopic(topic);
+    Serial.println(topic);
+    _client->subscribe(topic);
     
     Serial.print(F("[mqtt] subscribing to "));
-    Serial.print(getCommandTopic(topic));
-    if (_client->subscribe(topic)) { Serial.println(F("...done")); } else { Serial.println(F("...failed")); }
+    getCommandTopic(topic);
+    Serial.println(topic);
+    _client->subscribe(topic);
 
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
