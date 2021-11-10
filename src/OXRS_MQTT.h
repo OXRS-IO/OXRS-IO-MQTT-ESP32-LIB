@@ -10,14 +10,15 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
+#define MQTT_DEFAULT_PORT           1883
+#define MQTT_BACKOFF_SECS           5
+#define MQTT_MAX_BACKOFF_COUNT      12
+#define MQTT_MAX_MESSAGE_SIZE       4096
+
 static const char * MQTT_CONFIG_TOPIC     = "conf";
 static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
 static const char * MQTT_TELEMETRY_TOPIC  = "tele";
-
-#define MQTT_DEFAULT_PORT           1883
-#define MQTT_BACKOFF_SECS           5
-#define MQTT_MAX_BACKOFF_COUNT      12
 
 // Callback type for onConnected() and onDisconnected()
 typedef void (* voidCallback)(void);
