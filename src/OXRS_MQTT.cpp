@@ -99,10 +99,6 @@ void OXRS_MQTT::setDeviceConfig(JsonVariant json)
   {
     _onConfig(json);
   }
-  else
-  {
-    Serial.println(F("[mqtt] no config handler, ignoring device config"));
-  }
 }
 
 void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
@@ -238,17 +234,6 @@ void OXRS_MQTT::loop(void)
       else
       {
         // Attempt to connect
-        Serial.print(F("[mqtt] connecting to "));
-        Serial.print(_broker);
-        Serial.print(F(":"));
-        Serial.print(_port);      
-        if (strlen(_username) > 0)
-        {
-          Serial.print(F(" as "));
-          Serial.print(_username);
-        }
-        Serial.println(F("..."));
-      
         int state = _connect();
         if (state == 0) 
         {
@@ -274,23 +259,6 @@ void OXRS_MQTT::loop(void)
 
 void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
 {
-  // Log each received message to serial for debugging
-  Serial.print(F("[mqtt] [rx] "));
-  Serial.print(topic);
-  Serial.print(F(" "));
-  if (length == 0)
-  {
-    Serial.println(F("null"));
-  }
-  else
-  {
-    for (int i = 0; i < length; i++)
-    {
-      Serial.print((char)payload[i]);
-    }
-    Serial.println();
-  }
-  
   // Ignore if an empty message
   if (length == 0) return;
 
@@ -300,12 +268,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
 
   DynamicJsonDocument json(MQTT_MAX_MESSAGE_SIZE);
   DeserializationError error = deserializeJson(json, payload);
-  if (error) 
-  {
-    Serial.print(F("[mqtt] failed to deserialise JSON: "));
-    Serial.println(error.f_str());
-    return;
-  }
+  if (error) return;
 
   // Forward to the appropriate callback
   if (strncmp(topicType, MQTT_CONFIG_TOPIC, strlen(MQTT_CONFIG_TOPIC)) == 0)
@@ -314,10 +277,6 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     {
       _onConfig(json.as<JsonVariant>());
     }
-    else
-    {
-      Serial.println(F("[mqtt] no config handler, ignoring message"));
-    }
   }
   else if (strncmp(topicType, MQTT_COMMAND_TOPIC, strlen(MQTT_COMMAND_TOPIC)) == 0)
   {
@@ -325,15 +284,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     {
       _onCommand(json.as<JsonVariant>());
     }
-    else
-    {
-      Serial.println(F("[mqtt] no command handler, ignoring message"));
-    }
   }
-  else
-  {
-    Serial.println(F("[mqtt] invalid topic, ignoring message"));
-  }  
 }
 
 boolean OXRS_MQTT::connected(void)
@@ -389,15 +340,8 @@ int OXRS_MQTT::_connect(void)
   if (success)
   {
     // Subscribe to our config and command topics
-    Serial.print(F("[mqtt] subscribing to "));
-    getConfigTopic(topic);
-    Serial.println(topic);
-    _client->subscribe(topic);
-    
-    Serial.print(F("[mqtt] subscribing to "));
-    getCommandTopic(topic);
-    Serial.println(topic);
-    _client->subscribe(topic);
+    _client->subscribe(getConfigTopic(topic));
+    _client->subscribe(getCommandTopic(topic));
 
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
@@ -449,14 +393,6 @@ boolean OXRS_MQTT::_publish(JsonVariant json, char * topic, boolean retained)
   
   char buffer[MQTT_MAX_MESSAGE_SIZE];
   serializeJson(json, buffer);
-  
-  // Log each published message to serial for debugging
-  Serial.print(F("[mqtt] [tx] "));
-  Serial.print(topic);
-  Serial.print(F(" "));
-  Serial.print(buffer);
-  if (retained) { Serial.print(F(" [retained]")); }
-  Serial.println();
   
   _client->publish(topic, buffer, retained);
   return true;
