@@ -394,12 +394,12 @@ int OXRS_MQTT::_connect(void)
   {
     // Subscribe to our config and command topics
     Serial.print(F("[mqtt] subscribing to "));
-    Serial.println(getConfigTopic(topic));
-    if (_client->subscribe(topic)) { Serial.println(F("...ok")); } else { Serial.println(F("...failed")); }
+    Serial.print(getConfigTopic(topic));
+    if (_client->subscribe(topic)) { Serial.println(F("...done")); } else { Serial.println(F("...failed")); }
     
     Serial.print(F("[mqtt] subscribing to "));
-    Serial.println(getCommandTopic(topic));
-    if (_client->subscribe(topic)) { Serial.println(F("...ok")); } else { Serial.println(F("...failed")); }
+    Serial.print(getCommandTopic(topic));
+    if (_client->subscribe(topic)) { Serial.println(F("...done")); } else { Serial.println(F("...failed")); }
 
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
