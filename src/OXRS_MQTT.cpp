@@ -9,6 +9,9 @@
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
+  
+  // Set the buffer size (depends on MCU we are running on)
+  _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
 }
 
 void OXRS_MQTT::getMqttConfig(JsonVariant json)
@@ -295,7 +298,7 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   char * topicType;
   topicType = strtok(&topic[strlen(_topicPrefix)], "/");
 
-  DynamicJsonDocument json(2048);
+  DynamicJsonDocument json(MQTT_MAX_MESSAGE_SIZE);
   DeserializationError error = deserializeJson(json, payload);
   if (error) 
   {
@@ -371,25 +374,21 @@ int OXRS_MQTT::_connect(void)
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
 
-  // Get our LWT topic
-  char lwtTopic[64];
-  getLwtTopic(lwtTopic);
-  
   // Build our LWT payload
-  StaticJsonDocument<16> lwtPayload;
-  lwtPayload["online"] = false;
+  const int capacity = JSON_OBJECT_SIZE(1);
+  StaticJsonDocument<capacity> lwtJson;
+  lwtJson["online"] = false;
   
   // Get our LWT offline payload as raw string
-  char lwtOfflinePayload[18];
-  serializeJson(lwtPayload, lwtOfflinePayload);
-  
+  char lwtBuffer[24];
+  serializeJson(lwtJson, lwtBuffer);
+ 
   // Attempt to connect to the MQTT broker
-  boolean success = _client->connect(_clientId, _username, _password, lwtTopic, 0, true, lwtOfflinePayload);
+  char topic[64];  
+  boolean success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
   if (success)
   {
     // Subscribe to our config and command topics
-    char topic[64];
-
     Serial.print(F("[mqtt] subscribing to "));
     getConfigTopic(topic);
     Serial.println(topic);
@@ -401,8 +400,8 @@ int OXRS_MQTT::_connect(void)
     _client->subscribe(topic);
 
     // Publish our LWT online payload now we are ready
-    lwtPayload["online"] = true;
-    _publish(lwtPayload.as<JsonVariant>(), lwtTopic, true);
+    lwtJson["online"] = true;
+    _publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
  
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
@@ -448,7 +447,7 @@ boolean OXRS_MQTT::_publish(JsonVariant json, char * topic, boolean retained)
 {
   if (!_client->connected()) { return false; }
   
-  char buffer[2048];
+  char buffer[MQTT_MAX_MESSAGE_SIZE];
   serializeJson(json, buffer);
   
   // Log each published message to serial for debugging
