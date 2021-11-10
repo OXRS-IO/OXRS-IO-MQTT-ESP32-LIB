@@ -13,7 +13,12 @@
 #define MQTT_DEFAULT_PORT           1883
 #define MQTT_BACKOFF_SECS           5
 #define MQTT_MAX_BACKOFF_COUNT      12
+
+#if (defined ESP8266 || defined ESP32)
 #define MQTT_MAX_MESSAGE_SIZE       4096
+#else
+#define MQTT_MAX_MESSAGE_SIZE       256
+#endif
 
 static const char * MQTT_CONFIG_TOPIC     = "conf";
 static const char * MQTT_COMMAND_TOPIC    = "cmnd";
