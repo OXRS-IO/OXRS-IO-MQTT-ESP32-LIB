@@ -44,9 +44,6 @@ class OXRS_MQTT
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
-    void setMqttConfig(JsonVariant json);
-    void setDeviceConfig(JsonVariant json);
-
     char * getWildcardTopic(char topic[]);
     char * getLwtTopic(char topic[]);
     char * getAdoptTopic(char topic[]);
@@ -61,6 +58,9 @@ class OXRS_MQTT
     void onDisconnected(voidCallback);
     void onConfig(jsonCallback);
     void onCommand(jsonCallback);
+
+    void setConfig(JsonVariant json);
+    void setCommand(JsonVariant json);
 
     void loop(void);
     void receive(char * topic, byte * payload, unsigned int length);

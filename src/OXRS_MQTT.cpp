@@ -68,63 +68,6 @@ void OXRS_MQTT::setTopicSuffix(const char * suffix)
   }
 }
 
-void OXRS_MQTT::setMqttConfig(JsonVariant json)
-{
-  // broker is mandatory so don't clear if not explicitly specified
-  if (json.containsKey("broker"))
-  { 
-    if (json.containsKey("port"))
-    { 
-      setBroker(json["broker"], json["port"].as<uint16_t>());
-    }
-    else
-    {
-      setBroker(json["broker"], MQTT_DEFAULT_PORT);
-    }
-  }
-  
-  // client id is mandatory so don't clear if not explicitly specified
-  if (json.containsKey("clientId"))
-  { 
-    setClientId(json["clientId"]);
-  }
-  
-  if (json.containsKey("username") && json.containsKey("password"))
-  { 
-    setAuth(json["username"], json["password"]);
-  }
-  else
-  {
-    setAuth(NULL, NULL);
-  }
-  
-  if (json.containsKey("topicPrefix"))
-  { 
-    setTopicPrefix(json["topicPrefix"]);
-  }
-  else
-  {
-    setTopicPrefix(NULL);
-  }
-
-  if (json.containsKey("topicSuffix"))
-  { 
-    setTopicSuffix(json["topicSuffix"]);
-  }
-  else
-  {
-    setTopicSuffix(NULL);
-  }
-}
-
-void OXRS_MQTT::setDeviceConfig(JsonVariant json)
-{
-  if (_onConfig)
-  {
-    _onConfig(json);
-  }
-}
-
 char * OXRS_MQTT::getWildcardTopic(char topic[])
 {
   return _getTopic(topic, "+");
@@ -180,6 +123,22 @@ void OXRS_MQTT::onConfig(jsonCallback callback)
 void OXRS_MQTT::onCommand(jsonCallback callback)
 { 
   _onCommand = callback;
+}
+
+void OXRS_MQTT::setConfig(JsonVariant json)
+{
+  if (_onConfig)
+  {
+    _onConfig(json);
+  }
+}
+
+void OXRS_MQTT::setCommand(JsonVariant json)
+{
+  if (_onCommand)
+  {
+    _onCommand(json);
+  }
 }
 
 void OXRS_MQTT::loop(void)
