@@ -36,16 +36,17 @@ class OXRS_MQTT
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    void getMqttConfig(JsonVariant json);
-    void setMqttConfig(JsonVariant json);
-    void setDeviceConfig(JsonVariant json);
+    char * getClientId();
+    void setClientId(const char * clientId);
 
     void setBroker(const char * broker, uint16_t port);
-    void setClientId(const char * clientId);
     void setAuth(const char * username, const char * password);
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
     
+    void setMqttConfig(JsonVariant json);
+    void setDeviceConfig(JsonVariant json);
+
     char * getWildcardTopic(char topic[]);
     char * getLwtTopic(char topic[]);
     char * getAdoptTopic(char topic[]);

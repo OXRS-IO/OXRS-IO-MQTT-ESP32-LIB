@@ -14,33 +14,57 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
   _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
 }
 
-void OXRS_MQTT::getMqttConfig(JsonVariant json)
+char * OXRS_MQTT::getClientId()
 {
-  json["connected"] = _client->connected();
+  return _clientId;
+}
 
-  json["broker"] = _broker;
-  json["port"] = _port;
-  json["clientId"] = _clientId;
-  
-  // NOTE: we don't expose the password
-  json["username"] = _username;
-  
-  json["topicPrefix"] = _topicPrefix;
-  json["topicSuffix"] = _topicSuffix;
-  
-  // if we have a client id then add the various topics
-  if (strlen(_clientId) > 0)
+void OXRS_MQTT::setClientId(const char * clientId)
+{ 
+  strcpy(_clientId, clientId);
+}
+
+void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
+{
+    strcpy(_broker, broker);
+    _port = port;
+}
+
+void OXRS_MQTT::setAuth(const char * username, const char * password)
+{
+  if (username == NULL)
   {
-    char topic[64];
+    _username[0] = '\0';
+    _password[0] = '\0';
+  }
+  else
+  {
+    strcpy(_username, username);
+    strcpy(_password, password);
+  }
+}
 
-    json["lwtTopic"] = getLwtTopic(topic);
-    json["adoptTopic"] = getAdoptTopic(topic);
+void OXRS_MQTT::setTopicPrefix(const char * prefix)
+{ 
+  if (prefix == NULL)
+  {
+    _topicPrefix[0] = '\0';
+  }
+  else
+  {
+    strcpy(_topicPrefix, prefix);
+  }
+}
 
-    json["configTopic"] = getConfigTopic(topic);
-    json["commandTopic"] = getCommandTopic(topic);
-
-    json["statusTopic"] = getStatusTopic(topic);
-    json["telemetryTopic"] = getTelemetryTopic(topic);
+void OXRS_MQTT::setTopicSuffix(const char * suffix)
+{ 
+  if (suffix == NULL) 
+  {
+    _topicSuffix[0] = '\0';
+  }
+  else
+  {
+    strcpy(_topicSuffix, suffix);
   }
 }
 
@@ -98,55 +122,6 @@ void OXRS_MQTT::setDeviceConfig(JsonVariant json)
   if (_onConfig)
   {
     _onConfig(json);
-  }
-}
-
-void OXRS_MQTT::setBroker(const char * broker, uint16_t port)
-{
-    strcpy(_broker, broker);
-    _port = port;
-}
-
-void OXRS_MQTT::setClientId(const char * clientId)
-{ 
-  strcpy(_clientId, clientId);
-}
-
-void OXRS_MQTT::setAuth(const char * username, const char * password)
-{
-  if (username == NULL)
-  {
-    _username[0] = '\0';
-    _password[0] = '\0';
-  }
-  else
-  {
-    strcpy(_username, username);
-    strcpy(_password, password);
-  }
-}
-
-void OXRS_MQTT::setTopicPrefix(const char * prefix)
-{ 
-  if (prefix == NULL)
-  {
-    _topicPrefix[0] = '\0';
-  }
-  else
-  {
-    strcpy(_topicPrefix, prefix);
-  }
-}
-
-void OXRS_MQTT::setTopicSuffix(const char * suffix)
-{ 
-  if (suffix == NULL) 
-  {
-    _topicSuffix[0] = '\0';
-  }
-  else
-  {
-    strcpy(_topicSuffix, suffix);
   }
 }
 
