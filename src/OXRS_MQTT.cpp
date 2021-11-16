@@ -191,10 +191,10 @@ void OXRS_MQTT::loop(void)
   }
 }
 
-void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
+int OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
 {
   // Ignore if an empty message
-  if (length == 0) return;
+  if (length == 0) { return MQTT_RECEIVE_ZERO_LENGTH; }
 
   // Tokenise the topic (skipping any prefix) to get the root topic type
   char * topicType;
@@ -202,23 +202,21 @@ void OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
 
   DynamicJsonDocument json(MQTT_MAX_MESSAGE_SIZE);
   DeserializationError error = deserializeJson(json, payload);
-  if (error) return;
+  if (error) { return MQTT_RECEIVE_JSON_ERROR; }
 
   // Forward to the appropriate callback
   if (strncmp(topicType, MQTT_CONFIG_TOPIC, strlen(MQTT_CONFIG_TOPIC)) == 0)
   {
-    if (_onConfig)
-    {
-      _onConfig(json.as<JsonVariant>());
-    }
+    if (!_onConfig) { return MQTT_RECEIVE_NO_CONFIG_HANDLER; }
+    _onConfig(json.as<JsonVariant>());
   }
   else if (strncmp(topicType, MQTT_COMMAND_TOPIC, strlen(MQTT_COMMAND_TOPIC)) == 0)
   {
-    if (_onCommand)
-    {
-      _onCommand(json.as<JsonVariant>());
-    }
+    if (!_onCommand) { return MQTT_RECEIVE_NO_COMMAND_HANDLER; }
+    _onCommand(json.as<JsonVariant>());
   }
+  
+  return MQTT_RECEIVE_OK;
 }
 
 boolean OXRS_MQTT::connected(void)

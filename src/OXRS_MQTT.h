@@ -25,6 +25,13 @@ static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
 static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 
+// Return codes for receive()
+#define MQTT_RECEIVE_OK                 0
+#define MQTT_RECEIVE_ZERO_LENGTH        1
+#define MQTT_RECEIVE_JSON_ERROR         2
+#define MQTT_RECEIVE_NO_CONFIG_HANDLER  3
+#define MQTT_RECEIVE_NO_COMMAND_HANDLER 4
+
 // Callback type for onConnected() and onDisconnected()
 typedef void (* voidCallback)(void);
 
@@ -63,7 +70,7 @@ class OXRS_MQTT
     void setCommand(JsonVariant json);
 
     void loop(void);
-    void receive(char * topic, byte * payload, unsigned int length);
+    int receive(char * topic, byte * payload, unsigned int length);
     
     boolean connected(void);
     void reconnect(void);
