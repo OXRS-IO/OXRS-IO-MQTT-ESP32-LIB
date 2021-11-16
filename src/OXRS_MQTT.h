@@ -32,8 +32,12 @@ static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 #define MQTT_RECEIVE_NO_CONFIG_HANDLER  3
 #define MQTT_RECEIVE_NO_COMMAND_HANDLER 4
 
-// Callback type for onConnected() and onDisconnected()
-typedef void (* voidCallback)(void);
+// Callback types for onConnected()
+typedef void (* connectedCallback)(void);
+
+// Callback types for onDisconnected() - returns PubSubClient connection state 
+// - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
+typedef void (* disconnectedCallback)(int);
 
 // Callback type for onConfig() and onCommand()
 typedef void (* jsonCallback)(JsonVariant);
@@ -61,8 +65,8 @@ class OXRS_MQTT
     char * getStatusTopic(char topic[]);
     char * getTelemetryTopic(char topic[]);
     
-    void onConnected(voidCallback);
-    void onDisconnected(voidCallback);
+    void onConnected(connectedCallback);
+    void onDisconnected(disconnectedCallback);
     void onConfig(jsonCallback);
     void onCommand(jsonCallback);
 
@@ -92,13 +96,10 @@ class OXRS_MQTT
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
+    bool _connect(void);
 
-    // Returns PubSubClient connection state 
-    // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
-    int _connect(void);
-
-    voidCallback _onConnected;
-    voidCallback _onDisconnected;
+    connectedCallback _onConnected;
+    disconnectedCallback _onDisconnected;
     jsonCallback _onConfig;
     jsonCallback _onCommand;
     

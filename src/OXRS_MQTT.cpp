@@ -105,12 +105,12 @@ char * OXRS_MQTT::getTelemetryTopic(char topic[])
   return _getTopic(topic, MQTT_TELEMETRY_TOPIC);
 }
 
-void OXRS_MQTT::onConnected(voidCallback callback)
+void OXRS_MQTT::onConnected(connectedCallback callback)
 { 
   _onConnected = callback;
 }
 
-void OXRS_MQTT::onDisconnected(voidCallback callback)
+void OXRS_MQTT::onDisconnected(disconnectedCallback callback)
 { 
   _onDisconnected = callback;
 }
@@ -143,6 +143,7 @@ void OXRS_MQTT::setCommand(JsonVariant json)
 
 void OXRS_MQTT::loop(void)
 {
+  // Let the MQTT client handle any messages
   if (_client->loop())
   {
     // Currently connected so ensure we are ready to reconnect if it drops
@@ -155,37 +156,12 @@ void OXRS_MQTT::loop(void)
     uint32_t backoffMs = (uint32_t)_backoff * MQTT_BACKOFF_SECS * 1000;
     if ((millis() - _lastReconnectMs) > backoffMs)
     {
-      if (strlen(_broker) == 0)
+      // Attempt to connect
+      if (!_connect()) 
       {
-        // No broker configured, so backoff
+        // Reconnection failed, so backoff
         if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
         _lastReconnectMs = millis();
-
-        Serial.print(F("[mqtt] no broker configured, retry in "));
-        Serial.print(_backoff * MQTT_BACKOFF_SECS);
-        Serial.println(F("s"));
-      }
-      else
-      {
-        // Attempt to connect
-        int state = _connect();
-        if (state == 0) 
-        {
-          // Connection successful
-          Serial.println(F("[mqtt] connected"));
-        }
-        else
-        {
-          // Reconnection failed, so backoff
-          if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
-          _lastReconnectMs = millis();
-
-          Serial.print(F("[mqtt] failed to connect with error "));
-          Serial.print(state);
-          Serial.print(F(", retry in "));
-          Serial.print(_backoff * MQTT_BACKOFF_SECS);
-          Serial.println(F("s"));
-        }
       }
     }
   }
@@ -252,7 +228,7 @@ boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
   return _publish(json, getTelemetryTopic(topic), false);
 }
 
-int OXRS_MQTT::_connect(void)
+boolean OXRS_MQTT::_connect(void)
 {
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
@@ -285,10 +261,10 @@ int OXRS_MQTT::_connect(void)
   else
   {
     // Fire the disconnected callback
-    if (_onDisconnected) { _onDisconnected(); }
+    if (_onDisconnected) { _onDisconnected(_client->state()); }
   }
 
-  return _client->state();
+  return success;
 }
 
 char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
