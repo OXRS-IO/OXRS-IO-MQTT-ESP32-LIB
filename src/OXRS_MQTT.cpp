@@ -6,6 +6,8 @@
 #include "Arduino.h"
 #include "OXRS_MQTT.h"
 
+#include <StreamUtils.h>
+
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
@@ -299,9 +301,14 @@ boolean OXRS_MQTT::_publish(JsonVariant json, char * topic, boolean retained)
 {
   if (!_client->connected()) { return false; }
   
-  char buffer[MQTT_MAX_MESSAGE_SIZE];
-  serializeJson(json, buffer);
+  // Publish the JSON as a buffered stream rather using a temporary
+  // buffer in memory, since our payloads could be quite large
+  _client->beginPublish(topic, measureJson(json), retained);
   
-  _client->publish(topic, buffer, retained);
+  BufferingPrint bufferedClient(*_client, 32);
+  serializeJson(json, bufferedClient);
+  bufferedClient.flush();
+
+  _client->endPublish();
   return true;
 }
