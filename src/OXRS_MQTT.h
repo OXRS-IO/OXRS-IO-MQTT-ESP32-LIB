@@ -10,20 +10,22 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
-#define MQTT_DEFAULT_PORT           1883
-#define MQTT_BACKOFF_SECS           5
-#define MQTT_MAX_BACKOFF_COUNT      12
-
+// Increase the max MQTT message size for ESP based MCUs
 #if (defined ESP8266 || defined ESP32)
-#define MQTT_MAX_MESSAGE_SIZE       4096
+#define MQTT_MAX_MESSAGE_SIZE           4096
 #else
-#define MQTT_MAX_MESSAGE_SIZE       256
+#define MQTT_MAX_MESSAGE_SIZE           256
 #endif
 
-static const char * MQTT_CONFIG_TOPIC     = "conf";
-static const char * MQTT_COMMAND_TOPIC    = "cmnd";
-static const char * MQTT_STATUS_TOPIC     = "stat";
-static const char * MQTT_TELEMETRY_TOPIC  = "tele";
+// Enable streaming for ESP based MCUs
+#if (defined ESP8266 || defined ESP32)
+#define MQTT_ENABLE_STREAMING
+#endif
+
+#define MQTT_DEFAULT_PORT               1883
+#define MQTT_BACKOFF_SECS               5
+#define MQTT_MAX_BACKOFF_COUNT          12
+#define MQTT_STREAMING_BUFFER_SIZE      64
 
 // Return codes for receive()
 #define MQTT_RECEIVE_OK                 0
@@ -31,6 +33,12 @@ static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 #define MQTT_RECEIVE_JSON_ERROR         2
 #define MQTT_RECEIVE_NO_CONFIG_HANDLER  3
 #define MQTT_RECEIVE_NO_COMMAND_HANDLER 4
+
+// Topic constants
+static const char * MQTT_CONFIG_TOPIC     = "conf";
+static const char * MQTT_COMMAND_TOPIC    = "cmnd";
+static const char * MQTT_STATUS_TOPIC     = "stat";
+static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 
 // Callback types for onConnected()
 typedef void (* connectedCallback)(void);
