@@ -20,6 +20,7 @@ setTopicSuffix		KEYWORD2
 getWildcardTopic	KEYWORD2
 getLwtTopic	KEYWORD2
 getAdoptTopic	KEYWORD2
+getLogTopic	KEYWORD2
 
 getConfigTopic		KEYWORD2
 getCommandTopic		KEYWORD2
