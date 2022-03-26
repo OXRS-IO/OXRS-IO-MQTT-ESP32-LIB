@@ -13,7 +13,7 @@
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
-  
+
   // Set the buffer size (depends on MCU we are running on)
   _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
 }
@@ -238,23 +238,8 @@ boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
   return _publish(json, getTelemetryTopic(topic), false);
 }
 
-size_t OXRS_MQTT::write(uint8_t character)
-{
-  // Pass thru to MQTT logger
-  return _logger.write(character);
-}
-
 boolean OXRS_MQTT::_connect(void)
 {
-  // MqttLogger doesn't copy the logging topic to an internal
-  // buffer so we have to use a static array here
-  static char logTopic[64];  
-
-  // Initialise our logger
-  _logger.setClient(*_client);
-  _logger.setTopic(getLogTopic(logTopic));
-  _logger.setMode(MqttLoggerMode::MqttAndSerial);
-
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
 
@@ -268,7 +253,7 @@ boolean OXRS_MQTT::_connect(void)
   serializeJson(lwtJson, lwtBuffer);
  
   // Attempt to connect to the MQTT broker
-  char topic[64];  
+  char topic[64];
   boolean success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
   if (success)
   {

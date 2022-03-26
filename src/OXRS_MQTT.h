@@ -9,7 +9,6 @@
 #include "Arduino.h"
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
-#include <MqttLogger.h>
 
 // Increase the max MQTT message size for ESP based MCUs
 #if (defined ESP8266 || defined ESP32)
@@ -51,7 +50,7 @@ typedef void (* disconnectedCallback)(int);
 // Callback type for onConfig() and onCommand()
 typedef void (* jsonCallback)(JsonVariant);
 
-class OXRS_MQTT : public Print
+class OXRS_MQTT
 {
   public:
     OXRS_MQTT(PubSubClient& client);
@@ -93,13 +92,8 @@ class OXRS_MQTT : public Print
     boolean publishStatus(JsonVariant json);
     boolean publishTelemetry(JsonVariant json);
 
-    // Implement Print.h wrapper
-    virtual size_t write(uint8_t);
-    using Print::write;
-
   private:
     PubSubClient* _client;
-    MqttLogger _logger;
     
     char _broker[32];
     uint16_t _port = MQTT_DEFAULT_PORT;
