@@ -93,7 +93,9 @@ class OXRS_MQTT : public Print
     boolean publishStatus(JsonVariant json);
     boolean publishTelemetry(JsonVariant json);
 
+    // Implement Print.h wrapper
     virtual size_t write(uint8_t);
+    using Print::write;
 
   private:
     PubSubClient* _client;

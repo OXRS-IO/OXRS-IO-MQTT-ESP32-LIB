@@ -240,6 +240,7 @@ boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
 
 size_t OXRS_MQTT::write(uint8_t character)
 {
+  // Pass thru to MQTT logger
   return _logger.write(character);
 }
 
