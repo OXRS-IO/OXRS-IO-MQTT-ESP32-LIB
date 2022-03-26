@@ -13,7 +13,7 @@
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;
-  
+
   // Set the buffer size (depends on MCU we are running on)
   _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
 }
@@ -86,6 +86,12 @@ char * OXRS_MQTT::getLwtTopic(char topic[])
 char * OXRS_MQTT::getAdoptTopic(char topic[])
 {
   sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "adopt");
+  return topic;
+}
+
+char * OXRS_MQTT::getLogTopic(char topic[])
+{
+  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "log");
   return topic;
 }
 
@@ -247,7 +253,7 @@ boolean OXRS_MQTT::_connect(void)
   serializeJson(lwtJson, lwtBuffer);
  
   // Attempt to connect to the MQTT broker
-  char topic[64];  
+  char topic[64];
   boolean success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
   if (success)
   {

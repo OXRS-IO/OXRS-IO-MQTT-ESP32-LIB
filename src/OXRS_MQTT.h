@@ -66,6 +66,7 @@ class OXRS_MQTT
     char * getWildcardTopic(char topic[]);
     char * getLwtTopic(char topic[]);
     char * getAdoptTopic(char topic[]);
+    char * getLogTopic(char topic[]);
 
     char * getConfigTopic(char topic[]);
     char * getCommandTopic(char topic[]);
