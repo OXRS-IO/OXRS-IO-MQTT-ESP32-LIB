@@ -89,6 +89,12 @@ char * OXRS_MQTT::getAdoptTopic(char topic[])
   return topic;
 }
 
+char * OXRS_MQTT::getLogTopic(char topic[])
+{
+  sprintf_P(topic, PSTR("%s/%s"), getStatusTopic(topic), "log");
+  return topic;
+}
+
 char * OXRS_MQTT::getConfigTopic(char topic[])
 {
   return _getTopic(topic, MQTT_CONFIG_TOPIC);
@@ -232,8 +238,22 @@ boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
   return _publish(json, getTelemetryTopic(topic), false);
 }
 
+size_t OXRS_MQTT::write(uint8_t character)
+{
+  return _logger.write(character);
+}
+
 boolean OXRS_MQTT::_connect(void)
 {
+  // MqttLogger doesn't copy the logging topic to an internal
+  // buffer so we have to use a static array here
+  static char logTopic[64];  
+
+  // Initialise our logger
+  _logger.setClient(*_client);
+  _logger.setTopic(getLogTopic(logTopic));
+  _logger.setMode(MqttLoggerMode::MqttAndSerial);
+
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
 
