@@ -10,6 +10,12 @@
 #include <StreamUtils.h>
 #endif
 
+// Topic constants
+static const char * MQTT_CONFIG_TOPIC     = "conf";
+static const char * MQTT_COMMAND_TOPIC    = "cmnd";
+static const char * MQTT_STATUS_TOPIC     = "stat";
+static const char * MQTT_TELEMETRY_TOPIC  = "tele";
+
 OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
 {
   this->_client = &client;

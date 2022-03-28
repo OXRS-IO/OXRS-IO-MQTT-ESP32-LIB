@@ -34,12 +34,6 @@
 #define MQTT_RECEIVE_NO_CONFIG_HANDLER  3
 #define MQTT_RECEIVE_NO_COMMAND_HANDLER 4
 
-// Topic constants
-static const char * MQTT_CONFIG_TOPIC     = "conf";
-static const char * MQTT_COMMAND_TOPIC    = "cmnd";
-static const char * MQTT_STATUS_TOPIC     = "stat";
-static const char * MQTT_TELEMETRY_TOPIC  = "tele";
-
 // Callback types for onConnected()
 typedef void (* connectedCallback)(void);
 
