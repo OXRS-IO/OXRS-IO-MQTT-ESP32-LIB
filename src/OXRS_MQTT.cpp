@@ -172,6 +172,9 @@ void OXRS_MQTT::loop(void)
     uint32_t backoffMs = (uint32_t)_backoff * MQTT_BACKOFF_SECS * 1000;
     if ((millis() - _lastReconnectMs) > backoffMs)
     {
+      // Make sure we are definitely disconnected
+      _client->disconnect();
+      
       // Attempt to connect
       if (!_connect()) 
       {
