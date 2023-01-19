@@ -11,8 +11,10 @@
 #include <PubSubClient.h>
 
 // Increase the max MQTT message size for ESP based MCUs
-#if (defined ESP8266 || defined ESP32)
+#if defined (ESP32)
 #define MQTT_MAX_MESSAGE_SIZE           16384
+#elif defined (ESP8266)
+#define MQTT_MAX_MESSAGE_SIZE           8192
 #else
 #define MQTT_MAX_MESSAGE_SIZE           256
 #endif
