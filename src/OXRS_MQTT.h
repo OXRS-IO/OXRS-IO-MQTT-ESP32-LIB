@@ -29,6 +29,11 @@
 #define MQTT_MAX_BACKOFF_COUNT          12
 #define MQTT_STREAMING_BUFFER_SIZE      64
 
+// Return codes for loop()
+#define MQTT_CONNECTED                  0
+#define MQTT_RECONNECT_BACKING_OFF      1
+#define MQTT_RECONNECT_FAILED           2
+
 // Return codes for receive()
 #define MQTT_RECEIVE_OK                 0
 #define MQTT_RECEIVE_ZERO_LENGTH        1
@@ -78,7 +83,7 @@ class OXRS_MQTT
     void setConfig(JsonVariant json);
     void setCommand(JsonVariant json);
 
-    void loop(void);
+    int loop(void);
     int receive(char * topic, byte * payload, unsigned int length);
     
     boolean connected(void);

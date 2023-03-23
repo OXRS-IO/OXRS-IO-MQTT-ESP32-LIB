@@ -157,7 +157,7 @@ void OXRS_MQTT::setCommand(JsonVariant json)
   }
 }
 
-void OXRS_MQTT::loop(void)
+int OXRS_MQTT::loop(void)
 {
   // Let the MQTT client handle any messages
   if (_client->loop())
@@ -168,19 +168,27 @@ void OXRS_MQTT::loop(void)
   }
   else
   {
-    // Calculate the backoff interval and check if we need to try again
+    // Not connected so calculate the backoff interval and check if we need to try again
     uint32_t backoffMs = (uint32_t)_backoff * MQTT_BACKOFF_SECS * 1000;
     if ((millis() - _lastReconnectMs) > backoffMs)
     {
       // Attempt to connect
       if (!_connect()) 
       {
-        // Reconnection failed, so backoff
+        // Reconnection failed, so backoff more
         if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
         _lastReconnectMs = millis();
+        return MQTT_RECONNECT_FAILED;
       }
     }
+    else
+    {
+      // Waiting for our reconnect backoff timer to expire
+      return MQTT_RECONNECT_BACKING_OFF;
+    }
   }
+
+  return MQTT_CONNECTED;
 }
 
 int OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
