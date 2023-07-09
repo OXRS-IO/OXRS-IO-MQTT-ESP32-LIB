@@ -219,7 +219,7 @@ int OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   return MQTT_RECEIVE_OK;
 }
 
-boolean OXRS_MQTT::connected(void)
+bool OXRS_MQTT::connected(void)
 {
   return _client->connected();
 }
@@ -234,25 +234,46 @@ void OXRS_MQTT::reconnect(void)
   _lastReconnectMs = millis();
 }
 
-boolean OXRS_MQTT::publishAdopt(JsonVariant json)
+bool OXRS_MQTT::publishAdopt(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getAdoptTopic(topic), true);
+  return publish(json, getAdoptTopic(topic), true);
 }
 
-boolean OXRS_MQTT::publishStatus(JsonVariant json)
+bool OXRS_MQTT::publishStatus(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getStatusTopic(topic), false);
+  return publish(json, getStatusTopic(topic), false);
 }
 
-boolean OXRS_MQTT::publishTelemetry(JsonVariant json)
+bool OXRS_MQTT::publishTelemetry(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getTelemetryTopic(topic), false);
+  return publish(json, getTelemetryTopic(topic), false);
 }
 
-boolean OXRS_MQTT::_connect(void)
+bool OXRS_MQTT::publish(JsonVariant json, char * topic, bool retained)
+{
+  if (!_client->connected()) { return false; }
+  
+#ifdef MQTT_ENABLE_STREAMING
+  // Publish as a buffered stream
+  _client->beginPublish(topic, measureJson(json), retained);
+  BufferingPrint bufferedClient(*_client, MQTT_STREAMING_BUFFER_SIZE);
+  serializeJson(json, bufferedClient);
+  bufferedClient.flush();
+  _client->endPublish();
+#else
+  // Write to a temporary buffer and then publish
+  char buffer[MQTT_MAX_MESSAGE_SIZE];
+  serializeJson(json, buffer);
+  _client->publish(topic, buffer, retained);  
+#endif
+
+  return true;
+}
+
+bool OXRS_MQTT::_connect(void)
 {
   // Set the broker address and port (in case they have changed)
   _client->setServer(_broker, _port);
@@ -268,7 +289,7 @@ boolean OXRS_MQTT::_connect(void)
  
   // Attempt to connect to the MQTT broker
   char topic[64];
-  boolean success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
+  bool success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
   if (success)
   {
     // Subscribe to our config and command topics
@@ -277,7 +298,7 @@ boolean OXRS_MQTT::_connect(void)
 
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
-    _publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
+    publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
  
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
@@ -317,25 +338,4 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   }
   
   return topic;
-}
-
-boolean OXRS_MQTT::_publish(JsonVariant json, char * topic, boolean retained)
-{
-  if (!_client->connected()) { return false; }
-  
-#ifdef MQTT_ENABLE_STREAMING
-  // Publish as a buffered stream
-  _client->beginPublish(topic, measureJson(json), retained);
-  BufferingPrint bufferedClient(*_client, MQTT_STREAMING_BUFFER_SIZE);
-  serializeJson(json, bufferedClient);
-  bufferedClient.flush();
-  _client->endPublish();
-#else
-  // Write to a temporary buffer and then publish
-  char buffer[MQTT_MAX_MESSAGE_SIZE];
-  serializeJson(json, buffer);
-  _client->publish(topic, buffer, retained);  
-#endif
-
-  return true;
 }

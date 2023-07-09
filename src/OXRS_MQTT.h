@@ -86,12 +86,13 @@ class OXRS_MQTT
     int loop(void);
     int receive(char * topic, byte * payload, unsigned int length);
     
-    boolean connected(void);
+    bool connected(void);
     void reconnect(void);
     
-    boolean publishAdopt(JsonVariant json);
-    boolean publishStatus(JsonVariant json);
-    boolean publishTelemetry(JsonVariant json);
+    bool publishAdopt(JsonVariant json);
+    bool publishStatus(JsonVariant json);
+    bool publishTelemetry(JsonVariant json);
+    bool publish(JsonVariant json, char * topic, bool retained);
 
   private:
     PubSubClient* _client;
@@ -114,7 +115,6 @@ class OXRS_MQTT
     jsonCallback _onCommand;
     
     char * _getTopic(char topic[], const char * topicType);
-    boolean _publish(JsonVariant json, char * topic, boolean retained);
 };
 
 #endif
