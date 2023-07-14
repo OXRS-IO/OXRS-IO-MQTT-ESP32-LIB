@@ -92,7 +92,9 @@ class OXRS_MQTT
     bool publishAdopt(JsonVariant json);
     bool publishStatus(JsonVariant json);
     bool publishTelemetry(JsonVariant json);
-    bool publish(JsonVariant json, char * topic, bool retained);
+
+    void getHassDiscoveryJson(JsonVariant json, char * id);
+    bool publishHassDiscovery(JsonVariant json, char * topic);
 
   private:
     PubSubClient* _client;
@@ -115,6 +117,8 @@ class OXRS_MQTT
     jsonCallback _onCommand;
     
     char * _getTopic(char topic[], const char * topicType);
+
+    bool _publish(JsonVariant json, char * topic, bool retained);
 };
 
 #endif
