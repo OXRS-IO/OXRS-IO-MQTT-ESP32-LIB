@@ -24,7 +24,7 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
   _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
 }
 
-char * OXRS_MQTT::getClientId()
+char * OXRS_MQTT::getClientId(void)
 {
   return _clientId;
 }
@@ -250,6 +250,11 @@ bool OXRS_MQTT::publishTelemetry(JsonVariant json)
 {
   char topic[64];
   return _publish(json, getTelemetryTopic(topic), false);
+}
+
+bool OXRS_MQTT::getHassDiscoveryEnabled(void)
+{
+  return _hassDiscoveryEnabled;
 }
 
 void OXRS_MQTT::setHassDiscoveryEnabled(bool enabled)

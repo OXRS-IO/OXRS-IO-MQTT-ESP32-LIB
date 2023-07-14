@@ -56,7 +56,7 @@ class OXRS_MQTT
   public:
     OXRS_MQTT(PubSubClient& client);
 
-    char * getClientId();
+    char * getClientId(void);
     void setClientId(const char * clientId);
 
     void setBroker(const char * broker, uint16_t port);
@@ -93,6 +93,7 @@ class OXRS_MQTT
     bool publishStatus(JsonVariant json);
     bool publishTelemetry(JsonVariant json);
 
+    bool getHassDiscoveryEnabled(void);
     void setHassDiscoveryEnabled(bool enabled);
     void setHassDiscoveryTopicPrefix(const char * prefix);
     void getHassDiscoveryJson(JsonVariant json, char * id);
