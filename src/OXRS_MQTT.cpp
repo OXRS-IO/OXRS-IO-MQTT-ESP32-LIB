@@ -288,7 +288,7 @@ void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
 bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * component, char * id)
 {
   // Exit early if not enabled
-  if (!_hassDiscoveryEnabled) return false;
+  if (!_hassDiscoveryEnabled) { return false; }
 
   // Check for a null payload and ensure we send an empty JSON object
   // to clear any existing Home Assistant config
