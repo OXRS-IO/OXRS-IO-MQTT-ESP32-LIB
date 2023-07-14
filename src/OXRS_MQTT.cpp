@@ -265,9 +265,6 @@ void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
 
   JsonObject dev = json.createNestedObject("dev");
   dev["name"] = getClientId();
-  dev["mf"] = FW_MAKER;
-  dev["mdl"] = FW_NAME;
-  dev["sw"] = STRINGIFY(FW_VERSION);
 
   JsonArray ids = dev.createNestedArray("ids");
   ids.add(getClientId());
