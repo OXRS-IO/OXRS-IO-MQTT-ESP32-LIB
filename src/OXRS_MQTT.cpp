@@ -270,7 +270,7 @@ void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
   ids.add(getClientId());
 }
 
-bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * topicPrefix, char * component, char * id)
+bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * topic)
 {
   // Check for a null payload and ensure we send an empty JSON object
   // to clear any existing Home Assistant config
@@ -279,8 +279,6 @@ bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * topicPrefix, char 
     json = json.to<JsonObject>();
   }
 
-  char topic[64];
-  sprintf_P(topic, PSTR("%s/%s/%s/%s/config"), topicPrefix, component, _mqtt.getClientId(), id);
   return _publish(json, topic, true);
 }
 
