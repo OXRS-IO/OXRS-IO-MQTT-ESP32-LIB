@@ -111,7 +111,7 @@ class OXRS_MQTT
     char _topicSuffix[32];
 
     bool _hassDiscoveryEnabled = false;
-    char _hassDiscoveryTopicPrefix[32] = "homeassistant";
+    char _hassDiscoveryTopicPrefix[32];
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;

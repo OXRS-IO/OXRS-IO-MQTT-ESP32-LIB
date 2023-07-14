@@ -22,6 +22,9 @@ OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
 
   // Set the buffer size (depends on MCU we are running on)
   _client->setBufferSize(MQTT_MAX_MESSAGE_SIZE);
+
+  // Set the default Home Assistant discovery topic prefix
+  setHassDiscoveryTopicPrefix("homeassistant");
 }
 
 char * OXRS_MQTT::getClientId(void)
