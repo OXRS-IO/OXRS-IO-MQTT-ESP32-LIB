@@ -287,6 +287,9 @@ void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
 
 bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * component, char * id)
 {
+  // Exit early if not enabled
+  if (!_hassDiscoveryEnabled) return false;
+
   // Check for a null payload and ensure we send an empty JSON object
   // to clear any existing Home Assistant config
   if (json.isNull())
@@ -294,10 +297,9 @@ bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * component, char * 
     json = json.to<JsonObject>();
   }
 
-  // Build the discovery topic
+  // Build the discovery topic and publish retained
   char topic[64];
   sprintf_P(topic, PSTR("%s/%s/%s/%s/config"), _hassDiscoveryTopicPrefix, component, getClientId(), id);
-
   return _publish(json, topic, true);
 }
 
