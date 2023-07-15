@@ -93,8 +93,6 @@ class OXRS_MQTT
     bool publishStatus(JsonVariant json);
     bool publishTelemetry(JsonVariant json);
 
-    bool getHassDiscoveryEnabled(void);
-    void setHassDiscoveryEnabled(bool enabled);
     void setHassDiscoveryTopicPrefix(const char * prefix);
     void getHassDiscoveryJson(JsonVariant json, char * id);
     bool publishHassDiscovery(JsonVariant json, char * component, char * id);
@@ -110,7 +108,6 @@ class OXRS_MQTT
     char _topicPrefix[32];
     char _topicSuffix[32];
 
-    bool _hassDiscoveryEnabled = false;
     char _hassDiscoveryTopicPrefix[32];
     
     uint8_t _backoff;

@@ -255,16 +255,6 @@ bool OXRS_MQTT::publishTelemetry(JsonVariant json)
   return _publish(json, getTelemetryTopic(topic), false);
 }
 
-bool OXRS_MQTT::getHassDiscoveryEnabled(void)
-{
-  return _hassDiscoveryEnabled;
-}
-
-void OXRS_MQTT::setHassDiscoveryEnabled(bool enabled)
-{
-  _hassDiscoveryEnabled = enabled;
-}
-
 void OXRS_MQTT::setHassDiscoveryTopicPrefix(const char * prefix)
 {
   strcpy(_hassDiscoveryTopicPrefix, prefix);
@@ -290,9 +280,6 @@ void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
 
 bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * component, char * id)
 {
-  // Exit early if not enabled
-  if (!_hassDiscoveryEnabled) { return false; }
-
   // Check for a null payload and ensure we send an empty JSON object
   // to clear any existing Home Assistant config
   if (json.isNull())
