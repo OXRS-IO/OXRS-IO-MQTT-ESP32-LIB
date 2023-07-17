@@ -104,8 +104,6 @@ class OXRS_MQTT
     char _password[32];
     char _topicPrefix[32];
     char _topicSuffix[32];
-
-    char _hassDiscoveryTopicPrefix[32];
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
