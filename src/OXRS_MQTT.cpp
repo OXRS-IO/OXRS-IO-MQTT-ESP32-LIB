@@ -240,57 +240,40 @@ void OXRS_MQTT::reconnect(void)
 bool OXRS_MQTT::publishAdopt(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getAdoptTopic(topic), true);
+  return publish(json, getAdoptTopic(topic), true);
 }
 
 bool OXRS_MQTT::publishStatus(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getStatusTopic(topic), false);
+  return publish(json, getStatusTopic(topic), false);
 }
 
 bool OXRS_MQTT::publishTelemetry(JsonVariant json)
 {
   char topic[64];
-  return _publish(json, getTelemetryTopic(topic), false);
+  return publish(json, getTelemetryTopic(topic), false);
 }
 
-void OXRS_MQTT::setHassDiscoveryTopicPrefix(const char * prefix)
+bool OXRS_MQTT::publish(JsonVariant json, char * topic, bool retained)
 {
-  strcpy(_hassDiscoveryTopicPrefix, prefix);
-}
+  if (!_client->connected()) { return false; }
+  
+#ifdef MQTT_ENABLE_STREAMING
+  // Publish as a buffered stream
+  _client->beginPublish(topic, measureJson(json), retained);
+  BufferingPrint bufferedClient(*_client, MQTT_STREAMING_BUFFER_SIZE);
+  serializeJson(json, bufferedClient);
+  bufferedClient.flush();
+  _client->endPublish();
+#else
+  // Write to a temporary buffer and then publish
+  char buffer[MQTT_MAX_MESSAGE_SIZE];
+  serializeJson(json, buffer);
+  _client->publish(topic, buffer, retained);  
+#endif
 
-void OXRS_MQTT::getHassDiscoveryJson(JsonVariant json, char * id)
-{
-  char uniqueId[64];
-  sprintf_P(uniqueId, PSTR("%s_%s"), getClientId(), id);
-  json["uniq_id"] = uniqueId;
-  json["obj_id"] = uniqueId;
-
-  char topic[64];
-  json["avty_t"] = getLwtTopic(topic);
-  json["avty_tpl"] = "{% if value_json.online == true %}online{% else %}offline{% endif %}";
-
-  JsonObject dev = json.createNestedObject("dev");
-  dev["name"] = getClientId();
-
-  JsonArray ids = dev.createNestedArray("ids");
-  ids.add(getClientId());
-}
-
-bool OXRS_MQTT::publishHassDiscovery(JsonVariant json, char * component, char * id)
-{
-  // Check for a null payload and ensure we send an empty JSON object
-  // to clear any existing Home Assistant config
-  if (json.isNull())
-  {
-    json = json.to<JsonObject>();
-  }
-
-  // Build the discovery topic and publish retained
-  char topic[64];
-  sprintf_P(topic, PSTR("%s/%s/%s/%s/config"), _hassDiscoveryTopicPrefix, component, getClientId(), id);
-  return _publish(json, topic, true);
+  return true;
 }
 
 bool OXRS_MQTT::_connect(void)
@@ -318,7 +301,7 @@ bool OXRS_MQTT::_connect(void)
 
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
-    _publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
+    publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
  
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
@@ -358,25 +341,4 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
   }
   
   return topic;
-}
-
-bool OXRS_MQTT::_publish(JsonVariant json, char * topic, bool retained)
-{
-  if (!_client->connected()) { return false; }
-  
-#ifdef MQTT_ENABLE_STREAMING
-  // Publish as a buffered stream
-  _client->beginPublish(topic, measureJson(json), retained);
-  BufferingPrint bufferedClient(*_client, MQTT_STREAMING_BUFFER_SIZE);
-  serializeJson(json, bufferedClient);
-  bufferedClient.flush();
-  _client->endPublish();
-#else
-  // Write to a temporary buffer and then publish
-  char buffer[MQTT_MAX_MESSAGE_SIZE];
-  serializeJson(json, buffer);
-  _client->publish(topic, buffer, retained);  
-#endif
-
-  return true;
 }
