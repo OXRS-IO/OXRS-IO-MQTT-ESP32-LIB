@@ -92,10 +92,7 @@ class OXRS_MQTT
     bool publishAdopt(JsonVariant json);
     bool publishStatus(JsonVariant json);
     bool publishTelemetry(JsonVariant json);
-
-    void setHassDiscoveryTopicPrefix(const char * prefix);
-    void getHassDiscoveryJson(JsonVariant json, char * id);
-    bool publishHassDiscovery(JsonVariant json, char * component, char * id);
+    bool publish(JsonVariant json, char * topic, bool retained);
 
   private:
     PubSubClient* _client;
@@ -107,8 +104,6 @@ class OXRS_MQTT
     char _password[32];
     char _topicPrefix[32];
     char _topicSuffix[32];
-
-    char _hassDiscoveryTopicPrefix[32];
     
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
@@ -120,8 +115,6 @@ class OXRS_MQTT
     jsonCallback _onCommand;
     
     char * _getTopic(char topic[], const char * topicType);
-
-    bool _publish(JsonVariant json, char * topic, bool retained);
 };
 
 #endif

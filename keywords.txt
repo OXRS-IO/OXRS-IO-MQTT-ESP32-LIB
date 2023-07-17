@@ -40,10 +40,7 @@ reconnect				KEYWORD2
 publishAdopt		KEYWORD2
 publishStatus		KEYWORD2
 publishTelemetry	KEYWORD2
-
-setHassDiscoveryTopicPrefix KEYWORD2
-getHassDiscoveryJson  KEYWORD2
-publishHassDiscovery  KEYWORD2
+publish  		KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
