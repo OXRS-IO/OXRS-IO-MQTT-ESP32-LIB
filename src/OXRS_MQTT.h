@@ -1,6 +1,6 @@
 /*
  * OXRS_MQTT.h
- * 
+ *
  */
 
 #ifndef OXRS_MQTT_H
@@ -10,11 +10,13 @@
 #include <ArduinoJson.h>
 #include <PubSubClient.h>
 
-// Increase the max MQTT message size for ESP based MCUs
+// Increase the max MQTT message size for ESP or RPi based MCUs
 #if defined (ESP32)
 #define MQTT_MAX_MESSAGE_SIZE           16384
 #elif defined (ESP8266)
 #define MQTT_MAX_MESSAGE_SIZE           8192
+#elif defined (RASPBERRYPI_PICO)
+#define MQTT_MAX_MESSAGE_SIZE           16384
 #else
 #define MQTT_MAX_MESSAGE_SIZE           256
 #endif
@@ -44,7 +46,7 @@
 // Callback types for onConnected()
 typedef void (* connectedCallback)(void);
 
-// Callback types for onDisconnected() - returns PubSubClient connection state 
+// Callback types for onDisconnected() - returns PubSubClient connection state
 // - see https://github.com/knolleary/pubsubclient/blob/2d228f2f862a95846c65a8518c79f48dfc8f188c/src/PubSubClient.h#L44
 typedef void (* disconnectedCallback)(int);
 
@@ -63,7 +65,7 @@ class OXRS_MQTT
     void setAuth(const char * username, const char * password);
     void setTopicPrefix(const char * prefix);
     void setTopicSuffix(const char * suffix);
-    
+
     char * getWildcardTopic(char topic[]);
     char * getLwtTopic(char topic[]);
     char * getAdoptTopic(char topic[]);
@@ -74,7 +76,7 @@ class OXRS_MQTT
 
     char * getStatusTopic(char topic[]);
     char * getTelemetryTopic(char topic[]);
-    
+
     void onConnected(connectedCallback);
     void onDisconnected(disconnectedCallback);
     void onConfig(jsonCallback);
@@ -85,10 +87,10 @@ class OXRS_MQTT
 
     int loop(void);
     int receive(char * topic, byte * payload, unsigned int length);
-    
+
     bool connected(void);
     void reconnect(void);
-    
+
     bool publishAdopt(JsonVariant json);
     bool publishStatus(JsonVariant json);
     bool publishTelemetry(JsonVariant json);
@@ -96,7 +98,7 @@ class OXRS_MQTT
 
   private:
     PubSubClient* _client;
-    
+
     char _broker[32];
     uint16_t _port = MQTT_DEFAULT_PORT;
     char _clientId[32];
@@ -104,7 +106,7 @@ class OXRS_MQTT
     char _password[32];
     char _topicPrefix[32];
     char _topicSuffix[32];
-    
+
     uint8_t _backoff;
     uint32_t _lastReconnectMs;
     bool _connect(void);
@@ -113,8 +115,7 @@ class OXRS_MQTT
     disconnectedCallback _onDisconnected;
     jsonCallback _onConfig;
     jsonCallback _onCommand;
-    
+
     char * _getTopic(char topic[], const char * topicType);
 };
-
 #endif

@@ -1,6 +1,6 @@
 /*
  * OXRS_MQTT.cpp
- * 
+ *
  */
 
 #include "Arduino.h"
@@ -16,7 +16,7 @@ static const char * MQTT_COMMAND_TOPIC    = "cmnd";
 static const char * MQTT_STATUS_TOPIC     = "stat";
 static const char * MQTT_TELEMETRY_TOPIC  = "tele";
 
-OXRS_MQTT::OXRS_MQTT(PubSubClient& client) 
+OXRS_MQTT::OXRS_MQTT(PubSubClient& client)
 {
   this->_client = &client;
 
@@ -30,7 +30,7 @@ char * OXRS_MQTT::getClientId(void)
 }
 
 void OXRS_MQTT::setClientId(const char * clientId)
-{ 
+{
   strcpy(_clientId, clientId);
 }
 
@@ -55,7 +55,7 @@ void OXRS_MQTT::setAuth(const char * username, const char * password)
 }
 
 void OXRS_MQTT::setTopicPrefix(const char * prefix)
-{ 
+{
   if (prefix == NULL)
   {
     _topicPrefix[0] = '\0';
@@ -67,8 +67,8 @@ void OXRS_MQTT::setTopicPrefix(const char * prefix)
 }
 
 void OXRS_MQTT::setTopicSuffix(const char * suffix)
-{ 
-  if (suffix == NULL) 
+{
+  if (suffix == NULL)
   {
     _topicSuffix[0] = '\0';
   }
@@ -122,22 +122,22 @@ char * OXRS_MQTT::getTelemetryTopic(char topic[])
 }
 
 void OXRS_MQTT::onConnected(connectedCallback callback)
-{ 
+{
   _onConnected = callback;
 }
 
 void OXRS_MQTT::onDisconnected(disconnectedCallback callback)
-{ 
+{
   _onDisconnected = callback;
 }
 
 void OXRS_MQTT::onConfig(jsonCallback callback)
-{ 
+{
   _onConfig = callback;
 }
 
 void OXRS_MQTT::onCommand(jsonCallback callback)
-{ 
+{
   _onCommand = callback;
 }
 
@@ -173,7 +173,7 @@ int OXRS_MQTT::loop(void)
     if ((millis() - _lastReconnectMs) > backoffMs)
     {
       // Attempt to connect
-      if (!_connect()) 
+      if (!_connect())
       {
         // Reconnection failed, so backoff more
         if (_backoff < MQTT_MAX_BACKOFF_COUNT) { _backoff++; }
@@ -215,7 +215,7 @@ int OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
     if (!_onCommand) { return MQTT_RECEIVE_NO_COMMAND_HANDLER; }
     _onCommand(json.as<JsonVariant>());
   }
-  
+
   return MQTT_RECEIVE_OK;
 }
 
@@ -228,7 +228,7 @@ void OXRS_MQTT::reconnect(void)
 {
   // Disconnect from MQTT broker
   _client->disconnect();
-  
+
   // Force a connect attempt immediately
   _backoff = 0;
   _lastReconnectMs = millis();
@@ -255,7 +255,7 @@ bool OXRS_MQTT::publishTelemetry(JsonVariant json)
 bool OXRS_MQTT::publish(JsonVariant json, char * topic, bool retained)
 {
   if (!_client->connected()) { return false; }
-  
+
 #ifdef MQTT_ENABLE_STREAMING
   // Publish as a buffered stream
   _client->beginPublish(topic, measureJson(json), retained);
@@ -267,7 +267,7 @@ bool OXRS_MQTT::publish(JsonVariant json, char * topic, bool retained)
   // Write to a temporary buffer and then publish
   char buffer[MQTT_MAX_MESSAGE_SIZE];
   serializeJson(json, buffer);
-  _client->publish(topic, buffer, retained);  
+  _client->publish(topic, buffer, retained);
 #endif
 
   return true;
@@ -282,11 +282,11 @@ bool OXRS_MQTT::_connect(void)
   const int capacity = JSON_OBJECT_SIZE(1);
   StaticJsonDocument<capacity> lwtJson;
   lwtJson["online"] = false;
-  
+
   // Get our LWT offline payload as raw string
   char lwtBuffer[24];
   serializeJson(lwtJson, lwtBuffer);
- 
+
   // Attempt to connect to the MQTT broker
   char topic[64];
   bool success = _client->connect(_clientId, _username, _password, getLwtTopic(topic), 0, true, lwtBuffer);
@@ -299,7 +299,7 @@ bool OXRS_MQTT::_connect(void)
     // Publish our LWT online payload now we are ready
     lwtJson["online"] = true;
     publish(lwtJson.as<JsonVariant>(), getLwtTopic(topic), true);
- 
+
     // Fire the connected callback
     if (_onConnected) { _onConnected(); }
   }
@@ -336,6 +336,6 @@ char * OXRS_MQTT::_getTopic(char topic[], const char * topicType)
       sprintf_P(topic, PSTR("%s/%s/%s/%s"), _topicPrefix, topicType, _clientId, _topicSuffix);
     }
   }
-  
+
   return topic;
 }
