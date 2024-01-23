@@ -200,7 +200,7 @@ int OXRS_MQTT::receive(char * topic, byte * payload, unsigned int length)
   char * topicType;
   topicType = strtok(&topic[strlen(_topicPrefix)], "/");
 
-  DynamicJsonDocument json(MQTT_MAX_MESSAGE_SIZE);
+  JsonDocument json;
   DeserializationError error = deserializeJson(json, payload);
   if (error) { return MQTT_RECEIVE_JSON_ERROR; }
 
@@ -279,8 +279,7 @@ bool OXRS_MQTT::_connect(void)
   _client->setServer(_broker, _port);
 
   // Build our LWT payload
-  const int capacity = JSON_OBJECT_SIZE(1);
-  StaticJsonDocument<capacity> lwtJson;
+  JsonDocument lwtJson;
   lwtJson["online"] = false;
 
   // Get our LWT offline payload as raw string
